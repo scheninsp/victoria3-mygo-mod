@@ -1,0 +1,18 @@
+{
+  "name": "义务批量交易（卖钩） / Obligation Batch",
+  "id": "local.obligation_batch",
+  "version": "1.0",
+  "game_id": "victoria3",
+  "thumbnail": "thumbnail.png",
+  "picture": "thumbnail.png",
+  "supported_game_version": "1.13.*",
+  "short_description": "批量出售义务、保存排除名单、自选约束期。中英本地化。Batch obligation trades with saved exclusions, filters and selectable binding periods. Chinese / English localization.",
+  "tags": [
+    "Gameplay",
+    "Diplomacy"
+  ],
+  "relationships": [],
+  "game_custom_data": {
+    "multiplayer_synchronized": true
+  }
+}

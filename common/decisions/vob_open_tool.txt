@@ -1,0 +1,9 @@
+﻿vob_open_tool_decision = {
+    is_shown = { is_player = yes }
+    possible = { is_player = yes is_ai = no }
+    when_taken = {
+        vob_initialize = yes
+        change_variable = { name = vob_open_requested add = 1 }
+    }
+    ai_chance = { value = 0 }
+}

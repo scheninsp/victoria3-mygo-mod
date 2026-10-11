@@ -1,0 +1,13 @@
+可以适配。我已按本机 **Victoria 3 1.13.9** 文件改好一版，并在旁边保留了修改前备份：`C:\Users\infin\Documents\Paradox Interactive\Victoria 3\mod\mygo_backup_pre113_20261011_221456`。
+
+原来的 `1.14.*` 版本标记会让 1.13 启动器认为 mod 不受支持。文件本身也混入了 1.14 内容，例如 `right_click_menu.gui` 中调用 1.13 不具备的 `Country.SetAsStateValuePerspective` 和 `NavalMissionMarker.AccessEnemyFleetsOnMissionType`，以及 `ingame_hud.gui` 中新增的两种地图列表面板。
+
+我做了这些调整：
+
+- 用本机 1.13.9 原版重建了三个 GUI 覆盖文件，只插回 VOB 挂件：[`right_click_menu.gui`](<C:/Users/infin/Documents/Paradox Interactive/Victoria 3/mod/mygo/gui/right_click_menu.gui>)、[`treaty_draft_panel.gui`](<C:/Users/infin/Documents/Paradox Interactive/Victoria 3/mod/mygo/gui/treaty_draft_panel.gui>)、[`ingame_hud.gui`](<C:/Users/infin/Documents/Paradox Interactive/Victoria 3/mod/mygo/gui/ingame_hud.gui>)。这样也恢复了船只提示、间距和船只改装显示等原版差异。
+- 在 [`vob_effects.txt`](<C:/Users/infin/Documents/Paradox Interactive/Victoria 3/mod/mygo/common/scripted_effects/vob_effects.txt>) 中，把 1.13 脚本不支持的 `random_in_list` 改成通过 `random_country` 从 VOB 队列中抽选目标。
+- 将 [`descriptor.mod`](<C:/Users/infin/Documents/Paradox Interactive/Victoria 3/mod/mygo/descriptor.mod>) 和 [`metadata.json`](<C:/Users/infin/Documents/Paradox Interactive/Victoria 3/mod/mygo/.metadata/metadata.json>) 的支持版本改为 `1.13.*`。
+
+静态检查已通过：相关 GUI 花括号平衡，文件为 UTF-8，且不再含上述已知的 1.14 接口名。其他核心条约和列表接口在本机 1.13 文件中都能找到。
+
+还有一个需要实测的点：自动填写金额仍调用 `ArticleDraft.SetQuantity`。本机 1.13 可执行文件中能找到该方法名，但原版界面没有调用它，因此还不能仅凭静态检查确认它在游戏里正常工作。当前游戏进程仍在运行；最近一次启动记录显示 `enabledMods` 为空，所以也没有实际加载此 mod。重启游戏并启用 mod 后，才能继续验证批量交易流程。

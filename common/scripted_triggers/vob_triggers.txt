@@ -1,0 +1,67 @@
+﻿# ROOT = the player country. THIS = a potential counterparty.
+vob_small_rank = {
+    OR = {
+        country_rank = rank_value:minor_power
+        country_rank = rank_value:unrecognized_regional_power
+        country_rank = rank_value:insignificant_power
+        country_rank = rank_value:unrecognized_power
+    }
+}
+vob_tribute_subject = {
+    OR = {
+        is_subject_type = subject_type_chartered_company
+        is_subject_type = subject_type_colony
+        is_subject_type = subject_type_dominion
+        is_subject_type = subject_type_tributary
+        is_subject_type = subject_type_vassal
+        is_subject_type = subject_type_puppet
+        is_subject_type = subject_type_crown_land
+    }
+}
+vob_home_region = { capital.region = root.capital.region }
+vob_home_or_adjacent_region = {
+    OR = {
+        vob_home_region = yes
+        capital.region = {
+            any_scope_state = {
+                any_neighbouring_state = { region = root.capital.region }
+            }
+        }
+    }
+}
+vob_low_interest = {
+    NOT = {
+        root = {
+            has_strategic_region_interest_tier = {
+                strategic_region = prev.capital.region
+                value >= 2
+            }
+        }
+    }
+}
+vob_eligible = {
+    NOT = { this = root }
+    exists = capital
+    vob_small_rank = yes
+    vob_tribute_subject = no
+    in_default = no
+    fixed_income >= 400
+    vob_filter_matches = yes
+    vob_country_excluded = no
+    OR = {
+        root = { var:vob_mode = 6 }
+        root = { NOT = { owes_obligation_to = prev } }
+    }
+    # Do not ask for a second stream of money from an existing payer.
+    # scope_treaty contains treaties in force; native GUI checks pending drafts too.
+    NOT = {
+        any_scope_treaty = {
+            binds = root
+            any_scope_article = {
+                has_type = money_transfer
+                NOT = { source_country = root }
+                target_country = root
+            }
+        }
+    }
+}

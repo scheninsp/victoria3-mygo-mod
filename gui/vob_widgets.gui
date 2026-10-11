@@ -1,0 +1,2253 @@
+﻿template vob_button_neutral {
+        block "sound" { using = ui_checkbox }
+        texture = "gfx/interface/vob/neutral.dds" effectname = "NoHighlight"
+        spriteType = Corneredstretched spriteborder = { 5 5 } framesize = { 19 19 }
+        gfxtype = togglepushbuttongfx upframe = 1 uphoverframe = 2 uppressedframe = 3
+        downframe = 4 downhoverframe = 5 downpressedframe = 5 disableframe = 6 fontsize = 22
+    }
+template vob_button_positive {
+        block "sound" { using = ui_checkbox }
+        texture = "gfx/interface/vob/positive.dds" effectname = "NoHighlight"
+        spriteType = Corneredstretched spriteborder = { 5 5 } framesize = { 19 19 }
+        gfxtype = togglepushbuttongfx upframe = 1 uphoverframe = 2 uppressedframe = 3
+        downframe = 4 downhoverframe = 5 downpressedframe = 5 disableframe = 6 fontsize = 22
+    }
+template vob_button_danger {
+        block "sound" { using = ui_checkbox }
+        texture = "gfx/interface/vob/danger.dds" effectname = "NoHighlight"
+        spriteType = Corneredstretched spriteborder = { 5 5 } framesize = { 19 19 }
+        gfxtype = togglepushbuttongfx upframe = 1 uphoverframe = 2 uppressedframe = 3
+        downframe = 4 downhoverframe = 5 downpressedframe = 5 disableframe = 6 fontsize = 22
+    }
+template vob_button_ghost {
+        block "sound" { using = ui_checkbox }
+        texture = "gfx/interface/vob/ghost.dds" effectname = "NoHighlight"
+        spriteType = Corneredstretched spriteborder = { 5 5 } framesize = { 19 19 }
+        gfxtype = togglepushbuttongfx upframe = 1 uphoverframe = 2 uppressedframe = 3
+        downframe = 4 downhoverframe = 5 downpressedframe = 5 disableframe = 6 fontsize = 22
+    }
+types vob_types {
+type vob_hud = widget {
+    name = "vob_hud"
+    size = { 100% 100% }
+    parentanchor = top|left
+    widgetanchor = top|left
+    allow_outside = yes
+    alwaystransparent = yes
+visible = "[And(IsInGame, And(Not(IsPauseMenuShown), Not(IsGameOverScreenShown)))]"
+state = {
+        name = vob_new_ui_session
+        trigger_on_create = yes
+        on_start = "[GetVariableSystem.Clear('vob_armed')]"
+on_start = "[GetVariableSystem.Clear('vob_panel')]"
+on_start = "[GetVariableSystem.Clear('vob_excluded_only')]"
+on_start = "[GetVariableSystem.Clear('vob_reply_before')]"
+on_start = "[GetVariableSystem.Clear('vob_last_action')]"
+on_start = "[GetVariableSystem.Clear('vob_begin_pending')]"
+on_start = "[GetVariableSystem.Clear('vob_cleanup_pending')]"
+on_start = "[GetVariableSystem.Clear('vob_picker')]"
+on_start = "[GetVariableSystem.Clear('vob_filters_collapsed')]"
+on_start = "[GetVariableSystem.Set('vob_seen_open', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_open_requested').GetValueWithDefault('(CFixedPoint)0'))))]"
+    }
+state = {
+        name = _hide
+        on_start = "[GetVariableSystem.Clear('vob_armed')]"
+on_start = "[GetVariableSystem.Clear('vob_panel')]"
+on_start = "[GetVariableSystem.Clear('vob_begin_pending')]"
+on_start = "[GetVariableSystem.Clear('vob_cleanup_pending')]"
+    }
+
+    widget = {
+        name = "vob_begin_acknowledged"
+        size = { 1 1 }
+        alwaystransparent = yes
+        state = {
+            name = vob_run
+            trigger_when = "[And(GetVariableSystem.Exists('vob_begin_pending'), And(And(GetVariableSystem.Exists('vob_reply_before'), Not(GetVariableSystem.HasValue('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0')))))), EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_phase').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)1')))]"
+            on_start = "[GetVariableSystem.Clear('vob_begin_pending')]"
+on_start = "[GetVariableSystem.Clear('vob_panel')]"
+on_start = "[GetVariableSystem.Set('vob_armed', 'yes')]"
+        }
+    }
+
+    widget = {
+        name = "vob_begin_empty"
+        size = { 1 1 }
+        alwaystransparent = yes
+        state = {
+            name = vob_run
+            trigger_when = "[And(GetVariableSystem.Exists('vob_begin_pending'), And(And(GetVariableSystem.Exists('vob_reply_before'), Not(GetVariableSystem.HasValue('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0')))))), EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_phase').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)0')))]"
+            on_start = "[GetVariableSystem.Clear('vob_begin_pending')]"
+        }
+    }
+
+    widget = {
+        name = "vob_cleanup_acknowledged"
+        size = { 1 1 }
+        alwaystransparent = yes
+        state = {
+            name = vob_run
+            trigger_when = "[And(GetVariableSystem.Exists('vob_cleanup_pending'), EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_initialized').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)0'))]"
+            on_start = "[GetVariableSystem.Clear('vob_armed')]"
+on_start = "[GetVariableSystem.Clear('vob_panel')]"
+on_start = "[GetVariableSystem.Clear('vob_cleanup_pending')]"
+on_start = "[GetVariableSystem.Clear('vob_seen_open')]"
+on_start = "[GetVariableSystem.Clear('vob_reply_before')]"
+        }
+    }
+
+    widget = {
+        name = "vob_batch_finished"
+        size = { 1 1 }
+        alwaystransparent = yes
+        state = {
+            name = vob_run
+            trigger_when = "[And(GetVariableSystem.Exists('vob_armed'), EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_phase').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)0'))]"
+            on_start = "[GetVariableSystem.Clear('vob_armed')]"
+on_start = "[GetVariableSystem.Set('vob_panel', 'yes')]"
+on_start = "[GetVariableSystem.Set('vob_tab', 'settings')]"
+        }
+    }
+
+    widget = {
+        name = "vob_open_next"
+        size = { 1 1 }
+        alwaystransparent = yes
+        state = {
+            name = vob_run
+            trigger_when = "[And(And(GetVariableSystem.Exists('vob_armed'), And(And(IsInGame, And(GetPlayer.IsValid, And(Not(GetMetaPlayer.IsObserver), And(Not(GameIsMultiplayer), And(Not(IsPauseMenuShown), Not(IsGameOverScreenShown)))))), IsGamePaused)), And(EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_phase').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)1'), And(GetPlayer.MakeScope.Var('vob_target').GetCountry.IsValid, And(GetPlayer.CanSignTreatyWith(GetPlayer.MakeScope.Var('vob_target').GetCountry.Self), IsDataModelEmpty(AccessPlayer.GetDraftTreatiesWith(GetPlayer.MakeScope.Var('vob_target').GetCountry.Self))))))]"
+            on_start = "[InformationPanelBar.OpenTreatyDraftPanelForNewDraft(GetPlayer.Self, GetPlayer.MakeScope.Var('vob_target').GetCountry.Self)]"
+on_start = "[GetScriptedGui('vob_step_1_2').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).End)]"
+        }
+    }
+
+    widget = {
+        name = "vob_skip_unavailable_country"
+        size = { 1 1 }
+        alwaystransparent = yes
+        state = {
+            name = vob_run
+            trigger_when = "[And(And(GetVariableSystem.Exists('vob_armed'), And(And(IsInGame, And(GetPlayer.IsValid, And(Not(GetMetaPlayer.IsObserver), And(Not(GameIsMultiplayer), And(Not(IsPauseMenuShown), Not(IsGameOverScreenShown)))))), IsGamePaused)), And(EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_phase').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)1'), Not(And(GetPlayer.MakeScope.Var('vob_target').GetCountry.IsValid, And(GetPlayer.CanSignTreatyWith(GetPlayer.MakeScope.Var('vob_target').GetCountry.Self), IsDataModelEmpty(AccessPlayer.GetDraftTreatiesWith(GetPlayer.MakeScope.Var('vob_target').GetCountry.Self)))))))]"
+            on_start = "[GetScriptedGui('vob_skip_1').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).End)]"
+        }
+    }
+
+    widget = {
+        name = "vob_advance_queue"
+        size = { 1 1 }
+        alwaystransparent = yes
+        state = {
+            name = vob_run
+            trigger_when = "[And(And(GetVariableSystem.Exists('vob_armed'), And(And(IsInGame, And(GetPlayer.IsValid, And(Not(GetMetaPlayer.IsObserver), And(Not(GameIsMultiplayer), And(Not(IsPauseMenuShown), Not(IsGameOverScreenShown)))))), IsGamePaused)), EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_phase').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)8'))]"
+            on_start = "[GetScriptedGui('vob_advance').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).End)]"
+        }
+    }
+
+    widget = {
+        name = "vob_native_decision_entry"
+        size = { 1 1 }
+        alwaystransparent = yes
+        state = {
+            name = vob_run
+            trigger_when = "[And(And(IsInGame, And(Not(IsPauseMenuShown), Not(IsGameOverScreenShown))), And(GetPlayer.IsValid, And(Not(EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_open_requested').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)0')), Not(GetVariableSystem.HasValue('vob_seen_open', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_open_requested').GetValueWithDefault('(CFixedPoint)0'))))))))]"
+            on_start = "[GetVariableSystem.Clear('vob_armed')]"
+on_start = "[GetVariableSystem.Clear('vob_begin_pending')]"
+on_start = "[GetVariableSystem.Clear('vob_cleanup_pending')]"
+on_start = "[GetVariableSystem.Clear('vob_reply_before')]"
+on_start = "[InformationPanelBar.ClosePanel]"
+on_start = "[GetVariableSystem.Set('vob_panel', 'yes')]"
+on_start = "[GetVariableSystem.Set('vob_tab', 'settings')]"
+on_start = "[GetVariableSystem.Set('vob_region_tab', Select_CString(EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_mode').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)4'), 'exclude', 'include'))]"
+on_start = "[GetVariableSystem.Clear('vob_country_regions')]"
+on_start = "[GetVariableSystem.Clear('vob_picker')]"
+on_start = "[GetScriptedGui('vob_consume_ui_request').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).AddScope('language', MakeScopeValue(Select_CFixedPoint(EqualTo_string(Localize('vob_ui_language_token'), 'zh'), '(CFixedPoint)1', '(CFixedPoint)2'))).End)]"
+on_start = "[GetVariableSystem.Set('vob_seen_open', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_open_requested').GetValueWithDefault('(CFixedPoint)0'))))]"
+        }
+    }
+widget = {
+        name = "vob_running_bar"
+        visible = "[GetVariableSystem.Exists('vob_armed')]"
+        parentanchor = bottom|hcenter
+        widgetanchor = bottom|hcenter
+        position = { 0 -80 }
+        size = { 940 168 }
+        using = clickthrough_blocker
+        background = { using = default_background }
+        vbox = {
+            position = { 15 8 }
+            spacing = 3
+            textbox = {
+    size = { 900 34 }
+    text = "vob_live"
+    multiline = yes
+    fontsize = 22
+    align = left|nobaseline
+
+}
+            flowcontainer = { direction = vertical spacing = 3
+textbox = {
+    size = { 880 34 }
+    text = "vob_progress"
+    multiline = yes
+    fontsize = 20
+    align = left|nobaseline
+
+}default_progressbar_horizontal = { size = { 880 16 }
+        blockoverride "values" { min = 0 max = "[Max_CFixedPoint(GetPlayer.MakeScope.Var('vob_total').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)1')]" value = "[Add_CFixedPoint(GetPlayer.MakeScope.Var('vob_sent').GetValueWithDefault('(CFixedPoint)0'), GetPlayer.MakeScope.Var('vob_skipped').GetValueWithDefault('(CFixedPoint)0'))]" } }
+}
+            hbox = { spacing = 10
+                textbox = {
+    size = { 670 42 }
+    text = "vob_livehint"
+    multiline = yes
+    fontsize = 22
+    align = left|nobaseline
+
+}
+                button = {
+    using = vob_button_neutral
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 210 40 }
+    text = "vob_stop"
+
+
+
+    onclick = "[GetVariableSystem.Clear('vob_armed')]"
+onclick = "[GetScriptedGui('vob_stop').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).End)]"
+onclick = "[GetVariableSystem.Set('vob_panel', 'yes')]"
+onclick = "[GetVariableSystem.Set('vob_tab', 'settings')]"
+}
+            }
+            textbox = {
+    size = { 900 34 }
+    text = "vob_needs_pause"
+    multiline = yes
+    fontsize = 22
+    align = left|nobaseline
+    visible = "[Not(IsGamePaused)]"
+}
+        }
+    }
+widget = { name = "vob_control_panel" parentanchor = center widgetanchor = center
+        size = { 1000 940 } scale = "[ScaleToFitElementInside('(int32)1040', '(int32)1000')]"
+        visible = "[GetVariableSystem.Exists('vob_panel')]" using = clickthrough_blocker background = { using = default_background }
+        widget = { position = { 22 14 } size = { 952 40 } textbox = {
+    size = { 710 36 }
+    text = "vob_title"
+    multiline = yes
+    fontsize = 22
+    align = left|nobaseline
+
+}
+            widget = { position = { 750 0 } size = { 150 32 } button = {
+    using = vob_button_ghost
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 150 32 }
+    text = "vob_about"
+
+
+
+    onclick = "[GetVariableSystem.Clear('vob_initial_language_menu')]"
+onclick = "[GetVariableSystem.Set('vob_picker', 'about')]"
+} }
+            close_button = { parentanchor = top|right widgetanchor = top|right size = { 32 32 } blockoverride "sound" { using = ui_checkbox }
+                onclick = "[GetVariableSystem.Clear('vob_panel')]"
+onclick = "[GetVariableSystem.Clear('vob_picker')]"
+onclick = "[GetVariableSystem.Clear('vob_begin_pending')]"
+onclick = "[GetVariableSystem.Clear('vob_cleanup_pending')]" } }
+        widget = { position = { 22 66 } size = { 956 746 } flowcontainer = { direction = vertical spacing = 5
+widget = { size = { 952 40 } flowcontainer = { direction = horizontal spacing = 8
+button = {
+    using = vob_button_neutral
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 264 40 }
+    text = "vob_mode_1"
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+    down = "[EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_trade_type').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)1')]"
+
+    onclick = "[GetVariableSystem.Set('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0'))))]"
+onclick = "[GetVariableSystem.Set('vob_last_action', Localize('vob_mode_1'))]"
+onclick = "[GetScriptedGui('vob_trade_type').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).AddScope('choice', MakeScopeValue('(CFixedPoint)1')).End)]"
+}button = {
+    using = vob_button_neutral
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 264 40 }
+    text = "vob_mode_6"
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+    down = "[EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_trade_type').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)6')]"
+
+    onclick = "[GetVariableSystem.Set('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0'))))]"
+onclick = "[GetVariableSystem.Set('vob_last_action', Localize('vob_mode_6'))]"
+onclick = "[GetScriptedGui('vob_trade_type').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).AddScope('choice', MakeScopeValue('(CFixedPoint)6')).End)]"
+}textbox = {
+    size = { 176 40 }
+    text = "vob_term_label"
+    multiline = yes
+    fontsize = 20
+    align = left|nobaseline
+
+}button = {
+    using = vob_button_neutral
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 214 40 }
+    text = "vob_term_value"
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+
+
+    onclick = "[GetVariableSystem.Clear('vob_initial_language_menu')]"
+onclick = "[GetVariableSystem.Set('vob_picker', 'years')]"
+}
+} }textbox = {
+    size = { 940 34 }
+    text = "vob_short_native"
+    multiline = yes
+    fontsize = 20
+    align = left|nobaseline
+    visible = "[EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_trade_type').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)1')]"
+}textbox = {
+    size = { 940 34 }
+    text = "vob_short_free"
+    multiline = yes
+    fontsize = 20
+    align = left|nobaseline
+    visible = "[EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_trade_type').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)6')]"
+}textbox = {
+    size = { 940 34 }
+    text = "vob_term_note"
+    multiline = yes
+    fontsize = 20
+    align = left|nobaseline
+
+}widget = { size = { 952 30 } flowcontainer = { direction = horizontal spacing = 8
+textbox = {
+    size = { 160 34 }
+    text = "vob_filter_title"
+    multiline = yes
+    fontsize = 22
+    align = left|nobaseline
+
+}textbox = {
+    size = { 380 34 }
+    text = "vob_filter_hint"
+    multiline = yes
+    fontsize = 20
+    align = left|nobaseline
+
+}button = {
+    using = vob_button_danger
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 204 30 }
+    text = "vob_filter_reset"
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+
+
+    onclick = "[GetVariableSystem.Set('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0'))))]"
+onclick = "[GetVariableSystem.Set('vob_last_action', Localize('vob_filter_reset'))]"
+onclick = "[GetScriptedGui('vob_filter_reset').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).End)]"
+}button = {
+    using = vob_button_ghost
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 176 30 }
+    text = "vob_collapse"
+
+
+    visible = "[Not(GetVariableSystem.Exists('vob_filters_collapsed'))]"
+    onclick = "[GetVariableSystem.Set('vob_filters_collapsed', 'yes')]"
+}button = {
+    using = vob_button_ghost
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 176 30 }
+    text = "vob_expand"
+
+
+    visible = "[GetVariableSystem.Exists('vob_filters_collapsed')]"
+    onclick = "[GetVariableSystem.Clear('vob_filters_collapsed')]"
+}
+} }flowcontainer = { direction = vertical visible = "[Not(GetVariableSystem.Exists('vob_filters_collapsed'))]" spacing = 5 widget = { size = { 952 38 } flowcontainer = { direction = horizontal spacing = 8
+button = {
+    using = vob_button_neutral
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 230 38 }
+    text = "vob_filter_regions"
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+
+
+    onclick = "[GetVariableSystem.Clear('vob_initial_language_menu')]"
+onclick = "[GetVariableSystem.Set('vob_picker', 'regions')]"
+}button = {
+    using = vob_button_neutral
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 230 38 }
+    text = "vob_filter_initial"
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+
+
+    onclick = "[GetVariableSystem.Clear('vob_initial_language_menu')]"
+onclick = "[GetVariableSystem.Set('vob_picker', 'initial')]"
+}button = {
+    using = vob_button_neutral
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 230 38 }
+    text = "vob_filter_status"
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+
+
+    onclick = "[GetVariableSystem.Clear('vob_initial_language_menu')]"
+onclick = "[GetVariableSystem.Set('vob_picker', 'rank')]"
+}button = {
+    using = vob_button_neutral
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 230 38 }
+    text = "vob_filter_interests"
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+
+
+    onclick = "[GetVariableSystem.Clear('vob_initial_language_menu')]"
+onclick = "[GetVariableSystem.Set('vob_picker', 'interest')]"
+}
+} } }widget = { size = { 952 28 } flowcontainer = { direction = horizontal spacing = 3
+button = {
+    using = vob_button_neutral
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 155 28 }
+    text = "vob_active_initial"
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+
+    visible = "[Not(EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_filter_letter').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)0'))]"
+    onclick = "[GetVariableSystem.Set('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0'))))]"
+onclick = "[GetVariableSystem.Set('vob_last_action', Localize('vob_filter_reset'))]"
+onclick = "[GetScriptedGui('vob_filter_letter').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).AddScope('choice', MakeScopeValue('(CFixedPoint)0')).End)]"
+}button = {
+    using = vob_button_neutral
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 155 28 }
+    text = "vob_active_rank"
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+
+    visible = "[Not(EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_filter_rank').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)0'))]"
+    onclick = "[GetVariableSystem.Set('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0'))))]"
+onclick = "[GetVariableSystem.Set('vob_last_action', Localize('vob_filter_reset'))]"
+onclick = "[GetScriptedGui('vob_filter_rank').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).AddScope('choice', MakeScopeValue('(CFixedPoint)0')).End)]"
+}button = {
+    using = vob_button_neutral
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 155 28 }
+    text = "vob_active_interest"
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+
+    visible = "[Not(EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_filter_interest').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)0'))]"
+    onclick = "[GetVariableSystem.Set('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0'))))]"
+onclick = "[GetVariableSystem.Set('vob_last_action', Localize('vob_filter_reset'))]"
+onclick = "[GetScriptedGui('vob_filter_interest').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).AddScope('choice', MakeScopeValue('(CFixedPoint)0')).End)]"
+}button = {
+    using = vob_button_neutral
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 150 28 }
+    text = "vob_active_legacy"
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+
+    visible = "[GetScriptedGui('vob_filter_region_active').IsValid(GuiScope.SetRoot(GetPlayer.MakeScope).End)]"
+    onclick = "[GetVariableSystem.Clear('vob_initial_language_menu')]"
+onclick = "[GetVariableSystem.Set('vob_picker', 'regions')]"
+}
+} }widget = { size = { 952 28 } visible = "[Or(EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_include_active').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)1'), EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_exclude_active').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)1'))]" widget = { size = { 952 28 } flowcontainer = { direction = horizontal spacing = 8
+widget = { size = { 268 28 } visible = "[EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_include_active').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)1')]" widget = { size = { 268 28 } flowcontainer = { direction = horizontal spacing = 4
+button = {
+    using = vob_button_neutral
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 226 28 }
+    text = "vob_active_include"
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+
+
+    onclick = "[GetVariableSystem.Clear('vob_initial_language_menu')]"
+onclick = "[GetVariableSystem.Set('vob_picker', 'regions')]"
+onclick = "[GetVariableSystem.Set('vob_region_tab', 'include')]"
+}button = {
+    using = vob_button_neutral
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 38 28 }
+    text = "vob_cross"
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+
+
+    onclick = "[GetVariableSystem.Set('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0'))))]"
+onclick = "[GetVariableSystem.Set('vob_last_action', Localize('vob_active_include'))]"
+onclick = "[GetScriptedGui('vob_disable_include_regions').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).End)]"
+}
+} } }widget = { size = { 268 28 } visible = "[EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_exclude_active').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)1')]" widget = { size = { 268 28 } flowcontainer = { direction = horizontal spacing = 4
+button = {
+    using = vob_button_danger
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 226 28 }
+    text = "vob_active_exclude"
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+
+
+    onclick = "[GetVariableSystem.Clear('vob_initial_language_menu')]"
+onclick = "[GetVariableSystem.Set('vob_picker', 'regions')]"
+onclick = "[GetVariableSystem.Set('vob_region_tab', 'exclude')]"
+}button = {
+    using = vob_button_danger
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 38 28 }
+    text = "vob_cross"
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+
+
+    onclick = "[GetVariableSystem.Set('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0'))))]"
+onclick = "[GetVariableSystem.Set('vob_last_action', Localize('vob_active_exclude'))]"
+onclick = "[GetScriptedGui('vob_disable_exclude_regions').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).End)]"
+}
+} } }
+} } }widget = { size = { 952 32 } flowcontainer = { direction = horizontal spacing = 8
+textbox = {
+    size = { 310 34 }
+    text = "vob_selected_count"
+    multiline = yes
+    fontsize = 22
+    align = left|nobaseline
+
+}button = {
+    using = vob_button_neutral
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 140 30 }
+    text = "vob_only_selected"
+
+    down = "[EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_view_all').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)0')]"
+
+    onclick = "[GetVariableSystem.Set('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0'))))]"
+onclick = "[GetVariableSystem.Set('vob_last_action', Localize('vob_only_selected'))]"
+onclick = "[GetScriptedGui('vob_view_all').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).AddScope('choice', MakeScopeValue('(CFixedPoint)0')).End)]"
+}button = {
+    using = vob_button_neutral
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 140 30 }
+    text = "vob_browse_all"
+
+    down = "[EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_view_all').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)1')]"
+
+    onclick = "[GetVariableSystem.Set('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0'))))]"
+onclick = "[GetVariableSystem.Set('vob_last_action', Localize('vob_browse_all'))]"
+onclick = "[GetScriptedGui('vob_view_all').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).AddScope('choice', MakeScopeValue('(CFixedPoint)1')).End)]"
+}button = {
+    using = vob_button_ghost
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 170 30 }
+    text = "vob_exclude_selected"
+    enabled = "[And(And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending')))), Not(IsDataModelEmpty(GetPlayer.MakeScope.GetList('vob_candidates'))))]"
+
+    visible = "[EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_view_all').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)0')]"
+    onclick = "[GetVariableSystem.Set('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0'))))]"
+onclick = "[GetVariableSystem.Set('vob_last_action', Localize('vob_exclude_selected'))]"
+onclick = "[GetScriptedGui('vob_exclude_selected').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).End)]"
+}button = {
+    using = vob_button_ghost
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 170 30 }
+    text = "vob_exclude_visible"
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+
+    visible = "[EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_view_all').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)1')]"
+    onclick = "[GetVariableSystem.Set('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0'))))]"
+onclick = "[GetVariableSystem.Set('vob_last_action', Localize('vob_exclude_visible'))]"
+onclick = "[GetScriptedGui('vob_exclude_visible').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).End)]"
+}
+} }widget = { size = { 952 205 }
+        widget = { size = { 952 205 } visible = "[EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_view_all').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)0')]" scrollarea = { size = { 952 205 } scrollbarpolicy_horizontal = always_off scrollbarpolicy_vertical = as_needed
+        scrollbar_vertical = { using = vertical_scrollbar } scrollwidget = { fixedgridbox = { datamodel_wrap = 8 flipdirection = yes addcolumn = 118 addrow = 102 datamodel = "[GetPlayer.MakeScope.GetList('vob_candidates')]" item = { button = {
+    datacontext = "[Scope.GetCountry]"
+using = vob_button_positive
+tooltip = "vob_card_tip"
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 110 94 }
+
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+
+
+    onclick = "[GetVariableSystem.Set('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0'))))]"
+onclick = "[GetVariableSystem.Set('vob_last_action', Localize('vob_toggle_country'))]"
+onclick = "[GetScriptedGui('vob_toggle_exclusion').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).AddScope('target', Country.MakeScope).End)]"
+widget = { size = { 110 48 } position = { 0 9 } alwaystransparent = yes
+            icon = { size = { 60 39 } parentanchor = center widgetanchor = center texture = "[Country.GetFlag.GetMediumFlagTexture]" frame = "[Country.GetFlag.GetMediumFlagFrame]" framesize = "[GetMediumFlagFrameSize]" alwaystransparent = yes }
+        }
+        textbox = { fontsize = 18 position = { 3 61 } size = { 104 28 } text = "vob_card_name" align = center elide = right alwaystransparent = yes }
+        textbox = { using = fontsize_small position = { 88 0 } size = { 20 22 } text = "vob_check" align = center alwaystransparent = yes }} } } } } textbox = {
+    size = { 930 60 }
+    text = "vob_empty_selected"
+    multiline = yes
+    fontsize = 20
+    align = left|nobaseline
+    visible = "[Not(Not(IsDataModelEmpty(GetPlayer.MakeScope.GetList('vob_candidates'))))]"
+} }
+        widget = { size = { 952 205 } visible = "[EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_view_all').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)1')]" scrollarea = { size = { 952 205 } scrollbarpolicy_horizontal = always_off scrollbarpolicy_vertical = as_needed
+        scrollbar_vertical = { using = vertical_scrollbar } scrollwidget = { fixedgridbox = { datamodel_wrap = 8 flipdirection = yes addcolumn = 118 addrow = 102 datamodel = "[GetPlayer.MakeScope.GetList('vob_browsable_countries')]" item = { widget = { size = { 110 94 } datacontext = "[Scope.GetCountry]" button = {
+    datacontext = "[Scope.GetCountry]"
+using = vob_button_positive
+tooltip = "vob_card_tip"
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 110 94 }
+
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+
+    visible = "[GetScriptedGui('vob_candidate').IsValid(GuiScope.SetRoot(GetPlayer.MakeScope).AddScope('target', Country.MakeScope).End)]"
+    onclick = "[GetVariableSystem.Set('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0'))))]"
+onclick = "[GetVariableSystem.Set('vob_last_action', Localize('vob_toggle_country'))]"
+onclick = "[GetScriptedGui('vob_toggle_exclusion').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).AddScope('target', Country.MakeScope).End)]"
+widget = { size = { 110 48 } position = { 0 9 } alwaystransparent = yes
+            icon = { size = { 60 39 } parentanchor = center widgetanchor = center texture = "[Country.GetFlag.GetMediumFlagTexture]" frame = "[Country.GetFlag.GetMediumFlagFrame]" framesize = "[GetMediumFlagFrameSize]" alwaystransparent = yes }
+        }
+        textbox = { fontsize = 18 position = { 3 61 } size = { 104 28 } text = "vob_card_name" align = center elide = right alwaystransparent = yes }
+        textbox = { using = fontsize_small position = { 88 0 } size = { 20 22 } text = "vob_check" align = center alwaystransparent = yes }}button = {
+    datacontext = "[Scope.GetCountry]"
+using = vob_button_neutral
+tooltip = "vob_card_tip"
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 110 94 }
+
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+
+    visible = "[Not(GetScriptedGui('vob_candidate').IsValid(GuiScope.SetRoot(GetPlayer.MakeScope).AddScope('target', Country.MakeScope).End))]"
+    onclick = "[GetVariableSystem.Set('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0'))))]"
+onclick = "[GetVariableSystem.Set('vob_last_action', Localize('vob_toggle_country'))]"
+onclick = "[GetScriptedGui('vob_toggle_exclusion').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).AddScope('target', Country.MakeScope).End)]"
+widget = { size = { 110 48 } position = { 0 9 } alwaystransparent = yes
+            icon = { size = { 60 39 } parentanchor = center widgetanchor = center texture = "[Country.GetFlag.GetMediumFlagTexture]" frame = "[Country.GetFlag.GetMediumFlagFrame]" framesize = "[GetMediumFlagFrameSize]" alwaystransparent = yes }
+        }
+        textbox = { fontsize = 18 position = { 3 61 } size = { 104 28 } text = "vob_card_name" align = center elide = right alwaystransparent = yes }
+        } } } } } } }
+    }textbox = {
+    size = { 944 34 }
+    text = "vob_selected_help"
+    multiline = yes
+    fontsize = 20
+    align = left|nobaseline
+
+}widget = { size = { 952 32 } flowcontainer = { direction = horizontal spacing = 8
+textbox = {
+    size = { 552 34 }
+    text = "vob_excluded_count"
+    multiline = yes
+    fontsize = 22
+    align = left|nobaseline
+
+}button = {
+    using = vob_button_ghost
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 190 30 }
+    text = "vob_allow_visible"
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+
+
+    onclick = "[GetVariableSystem.Set('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0'))))]"
+onclick = "[GetVariableSystem.Set('vob_last_action', Localize('vob_allow_visible'))]"
+onclick = "[GetScriptedGui('vob_allow_visible').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).End)]"
+}button = {
+    using = vob_button_ghost
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 190 30 }
+    text = "vob_restore_all"
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+
+
+    onclick = "[GetVariableSystem.Set('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0'))))]"
+onclick = "[GetVariableSystem.Set('vob_last_action', Localize('vob_restore_all'))]"
+onclick = "[GetScriptedGui('vob_restore_all').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).End)]"
+}
+} }widget = { size = { 952 108 } scrollarea = { size = { 952 108 } scrollbarpolicy_horizontal = always_off scrollbarpolicy_vertical = as_needed
+        scrollbar_vertical = { using = vertical_scrollbar } scrollwidget = { fixedgridbox = { datamodel_wrap = 8 flipdirection = yes addcolumn = 118 addrow = 102 datamodel = "[GetPlayer.MakeScope.GetList('vob_all_excluded')]" item = { widget = { size = { 110 94 } datacontext = "[Scope.GetCountry]" button = {
+    datacontext = "[Scope.GetCountry]"
+using = vob_button_danger
+tooltip = "vob_card_tip"
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 110 94 }
+
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+
+    visible = "[GetScriptedGui('vob_region_excluded').IsValid(GuiScope.SetRoot(GetPlayer.MakeScope).AddScope('target', Country.MakeScope).End)]"
+    onclick = "[GetVariableSystem.Clear('vob_initial_language_menu')]"
+onclick = "[GetVariableSystem.Set('vob_picker', 'regions')]"
+onclick = "[GetVariableSystem.Set('vob_region_tab', 'exclude')]"
+widget = { size = { 110 48 } position = { 0 9 } alwaystransparent = yes
+            icon = { size = { 60 39 } parentanchor = center widgetanchor = center texture = "[Country.GetFlag.GetMediumFlagTexture]" frame = "[Country.GetFlag.GetMediumFlagFrame]" framesize = "[GetMediumFlagFrameSize]" alwaystransparent = yes }
+        }
+        textbox = { fontsize = 18 position = { 3 61 } size = { 104 28 } text = "vob_card_name" align = center elide = right alwaystransparent = yes }
+        textbox = { using = fontsize_small position = { 88 0 } size = { 20 22 } text = "vob_cross" align = center alwaystransparent = yes }}button = {
+    datacontext = "[Scope.GetCountry]"
+using = vob_button_danger
+tooltip = "vob_card_tip"
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 110 94 }
+
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+
+    visible = "[Not(GetScriptedGui('vob_region_excluded').IsValid(GuiScope.SetRoot(GetPlayer.MakeScope).AddScope('target', Country.MakeScope).End))]"
+    onclick = "[GetVariableSystem.Set('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0'))))]"
+onclick = "[GetVariableSystem.Set('vob_last_action', Localize('vob_toggle_country'))]"
+onclick = "[GetScriptedGui('vob_toggle_exclusion').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).AddScope('target', Country.MakeScope).End)]"
+widget = { size = { 110 48 } position = { 0 9 } alwaystransparent = yes
+            icon = { size = { 60 39 } parentanchor = center widgetanchor = center texture = "[Country.GetFlag.GetMediumFlagTexture]" frame = "[Country.GetFlag.GetMediumFlagFrame]" framesize = "[GetMediumFlagFrameSize]" alwaystransparent = yes }
+        }
+        textbox = { fontsize = 18 position = { 3 61 } size = { 104 28 } text = "vob_card_name" align = center elide = right alwaystransparent = yes }
+        textbox = { using = fontsize_small position = { 88 0 } size = { 20 22 } text = "vob_minus" align = center alwaystransparent = yes }} } } } } } textbox = {
+    size = { 930 50 }
+    text = "vob_empty_excluded"
+    multiline = yes
+    fontsize = 20
+    align = left|nobaseline
+    visible = "[IsDataModelEmpty(GetPlayer.MakeScope.GetList('vob_all_excluded'))]"
+} }textbox = {
+    size = { 944 34 }
+    text = "vob_excluded_help"
+    multiline = yes
+    fontsize = 20
+    align = left|nobaseline
+
+}
+} }
+        widget = { position = { 22 816 } size = { 956 110 } flowcontainer = { direction = vertical spacing = 3
+widget = { size = { 952 40 } flowcontainer = { direction = horizontal spacing = 8
+button = {
+    using = vob_button_danger
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 280 40 }
+    text = "vob_cleanup"
+    enabled = "[And(And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending')))), GetScriptedGui('vob_cleanup').IsValid(GuiScope.SetRoot(GetPlayer.MakeScope).End))]"
+
+
+    onclick = "[GetVariableSystem.Set('vob_cleanup_pending', 'yes')]"
+onclick = "[GetVariableSystem.Set('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0'))))]"
+onclick = "[GetVariableSystem.Set('vob_last_action', Localize('vob_cleanup'))]"
+onclick = "[GetScriptedGui('vob_cleanup').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).End)]"
+}button = {
+    using = vob_button_ghost
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 150 40 }
+    text = "vob_refresh"
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+
+
+    onclick = "[GetVariableSystem.Set('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0'))))]"
+onclick = "[GetVariableSystem.Set('vob_last_action', Localize('vob_refresh'))]"
+onclick = "[GetScriptedGui('vob_refresh').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).End)]"
+}button = {
+    using = vob_button_neutral
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 170 40 }
+    text = "vob_preview"
+    enabled = "[And(And(And(IsInGame, And(GetPlayer.IsValid, And(Not(GetMetaPlayer.IsObserver), And(Not(GameIsMultiplayer), And(Not(IsPauseMenuShown), Not(IsGameOverScreenShown)))))), And(IsGamePaused, And(And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending')))), And(Not(InformationPanelBar.IsAnyPanelOpen), Not(IsDataModelEmpty(GetPlayer.MakeScope.GetList('vob_candidates'))))))), GetScriptedGui('vob_preview').IsValid(GuiScope.SetRoot(GetPlayer.MakeScope).End))]"
+
+
+    onclick = "[GetVariableSystem.Set('vob_begin_pending', 'yes')]"
+onclick = "[GetVariableSystem.Set('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0'))))]"
+onclick = "[GetVariableSystem.Set('vob_last_action', Localize('vob_preview'))]"
+onclick = "[GetScriptedGui('vob_preview').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).End)]"
+}button = {
+    using = vob_button_positive
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 322 40 }
+    text = "vob_start_count"
+    enabled = "[And(And(And(IsInGame, And(GetPlayer.IsValid, And(Not(GetMetaPlayer.IsObserver), And(Not(GameIsMultiplayer), And(Not(IsPauseMenuShown), Not(IsGameOverScreenShown)))))), And(IsGamePaused, And(And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending')))), And(Not(InformationPanelBar.IsAnyPanelOpen), Not(IsDataModelEmpty(GetPlayer.MakeScope.GetList('vob_candidates'))))))), GetScriptedGui('vob_start').IsValid(GuiScope.SetRoot(GetPlayer.MakeScope).End))]"
+
+
+    onclick = "[GetVariableSystem.Set('vob_begin_pending', 'yes')]"
+onclick = "[GetVariableSystem.Set('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0'))))]"
+onclick = "[GetVariableSystem.Set('vob_last_action', Localize('vob_start_count'))]"
+onclick = "[GetScriptedGui('vob_start').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).End)]"
+}
+} }textbox = {
+    size = { 950 34 }
+    text = "vob_ui_waiting"
+    multiline = yes
+    fontsize = 20
+    align = left|nobaseline
+    visible = "[Not(EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_ui_ready').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)1'))]"
+}textbox = {
+    size = { 950 34 }
+    text = "vob_action_waiting"
+    multiline = yes
+    fontsize = 20
+    align = left|nobaseline
+    visible = "[And(EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_ui_ready').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)1'), And(GetVariableSystem.Exists('vob_reply_before'), Not(And(GetVariableSystem.Exists('vob_reply_before'), Not(GetVariableSystem.HasValue('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0')))))))))]"
+}textbox = {
+    size = { 950 34 }
+    text = "vob_action_applied"
+    multiline = yes
+    fontsize = 20
+    align = left|nobaseline
+    visible = "[And(EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_ui_ready').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)1'), And(GetVariableSystem.Exists('vob_reply_before'), Not(GetVariableSystem.HasValue('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0')))))))]"
+}textbox = {
+    size = { 950 34 }
+    text = "vob_quiet_hint"
+    multiline = yes
+    fontsize = 20
+    align = left|nobaseline
+    visible = "[And(EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_ui_ready').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)1'), Not(GetVariableSystem.Exists('vob_reply_before')))]"
+}textbox = {
+    size = { 950 34 }
+    text = "vob_needs_pause"
+    multiline = yes
+    fontsize = 20
+    align = left|nobaseline
+    visible = "[Not(IsGamePaused)]"
+}textbox = {
+    size = { 950 34 }
+    text = "vob_needs_close_draft"
+    multiline = yes
+    fontsize = 20
+    align = left|nobaseline
+    visible = "[InformationPanelBar.IsAnyPanelOpen]"
+}
+} }
+    widget = { name = "vob_picker_years" size = { 918 270 } parentanchor = center widgetanchor = center
+        visible = "[GetVariableSystem.HasValue('vob_picker', 'years')]" using = clickthrough_blocker background = { using = default_background }
+        widget = { position = { 20 18 } size = { 878 185 } flowcontainer = { direction = vertical spacing = 15
+textbox = {
+    size = { 870 36 }
+    text = "vob_term_label"
+    multiline = yes
+    fontsize = 22
+    align = left|nobaseline
+
+}widget = { size = { 870 42 } flowcontainer = { direction = horizontal spacing = 5
+button = {
+    using = vob_button_neutral
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 140 42 }
+    text = "vob_year_5"
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+    down = "[EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_binding_years').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)5')]"
+
+    onclick = "[GetVariableSystem.Set('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0'))))]"
+onclick = "[GetVariableSystem.Set('vob_last_action', Localize('vob_year_5'))]"
+onclick = "[GetScriptedGui('vob_set_duration').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).AddScope('years', MakeScopeValue('(CFixedPoint)5')).End)]"
+onclick = "[GetVariableSystem.Clear('vob_picker')]"
+}button = {
+    using = vob_button_neutral
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 140 42 }
+    text = "vob_year_10"
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+    down = "[EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_binding_years').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)10')]"
+
+    onclick = "[GetVariableSystem.Set('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0'))))]"
+onclick = "[GetVariableSystem.Set('vob_last_action', Localize('vob_year_10'))]"
+onclick = "[GetScriptedGui('vob_set_duration').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).AddScope('years', MakeScopeValue('(CFixedPoint)10')).End)]"
+onclick = "[GetVariableSystem.Clear('vob_picker')]"
+}button = {
+    using = vob_button_neutral
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 140 42 }
+    text = "vob_year_15"
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+    down = "[EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_binding_years').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)15')]"
+
+    onclick = "[GetVariableSystem.Set('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0'))))]"
+onclick = "[GetVariableSystem.Set('vob_last_action', Localize('vob_year_15'))]"
+onclick = "[GetScriptedGui('vob_set_duration').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).AddScope('years', MakeScopeValue('(CFixedPoint)15')).End)]"
+onclick = "[GetVariableSystem.Clear('vob_picker')]"
+}button = {
+    using = vob_button_neutral
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 140 42 }
+    text = "vob_year_25"
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+    down = "[EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_binding_years').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)25')]"
+
+    onclick = "[GetVariableSystem.Set('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0'))))]"
+onclick = "[GetVariableSystem.Set('vob_last_action', Localize('vob_year_25'))]"
+onclick = "[GetScriptedGui('vob_set_duration').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).AddScope('years', MakeScopeValue('(CFixedPoint)25')).End)]"
+onclick = "[GetVariableSystem.Clear('vob_picker')]"
+}button = {
+    using = vob_button_neutral
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 140 42 }
+    text = "vob_year_50"
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+    down = "[EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_binding_years').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)50')]"
+
+    onclick = "[GetVariableSystem.Set('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0'))))]"
+onclick = "[GetVariableSystem.Set('vob_last_action', Localize('vob_year_50'))]"
+onclick = "[GetScriptedGui('vob_set_duration').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).AddScope('years', MakeScopeValue('(CFixedPoint)50')).End)]"
+onclick = "[GetVariableSystem.Clear('vob_picker')]"
+}button = {
+    using = vob_button_neutral
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 140 42 }
+    text = "vob_year_99"
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+    down = "[EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_binding_years').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)99')]"
+
+    onclick = "[GetVariableSystem.Set('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0'))))]"
+onclick = "[GetVariableSystem.Set('vob_last_action', Localize('vob_year_99'))]"
+onclick = "[GetScriptedGui('vob_set_duration').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).AddScope('years', MakeScopeValue('(CFixedPoint)99')).End)]"
+onclick = "[GetVariableSystem.Clear('vob_picker')]"
+}
+} }textbox = {
+    size = { 870 65 }
+    text = "vob_bindinghint"
+    multiline = yes
+    fontsize = 20
+    align = left|nobaseline
+
+}
+} }
+        widget = { position = { 20 210 } size = { 878 42 } button = {
+    using = vob_button_positive
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 878 40 }
+    text = "vob_close_picker"
+
+
+
+    onclick = "[GetVariableSystem.Clear('vob_picker')]"
+} }
+    }widget = { name = "vob_picker_regions" size = { 918 710 } parentanchor = center widgetanchor = center
+        visible = "[GetVariableSystem.HasValue('vob_picker', 'regions')]" using = clickthrough_blocker background = { using = default_background }
+        widget = { position = { 20 18 } size = { 878 625 } flowcontainer = { direction = vertical spacing = 8
+textbox = {
+    size = { 870 34 }
+    text = "vob_region_title"
+    multiline = yes
+    fontsize = 22
+    align = left|nobaseline
+
+}textbox = {
+    size = { 870 54 }
+    text = "vob_region_help"
+    multiline = yes
+    fontsize = 20
+    align = left|nobaseline
+
+}widget = { size = { 870 34 } flowcontainer = { direction = horizontal spacing = 8
+button = {
+    using = vob_button_neutral
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 220 34 }
+    text = "vob_preset_home"
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+
+
+    onclick = "[GetVariableSystem.Set('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0'))))]"
+onclick = "[GetVariableSystem.Set('vob_last_action', Localize('vob_preset_home'))]"
+onclick = "[GetScriptedGui('vob_preset_home').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).End)]"
+}button = {
+    using = vob_button_neutral
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 310 34 }
+    text = "vob_preset_neighbours"
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+
+
+    onclick = "[GetVariableSystem.Set('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0'))))]"
+onclick = "[GetVariableSystem.Set('vob_last_action', Localize('vob_preset_neighbours'))]"
+onclick = "[GetScriptedGui('vob_preset_neighbours').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).End)]"
+}button = {
+    using = vob_button_neutral
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 310 34 }
+    text = "vob_preset_low"
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+
+
+    onclick = "[GetVariableSystem.Set('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0'))))]"
+onclick = "[GetVariableSystem.Set('vob_last_action', Localize('vob_preset_low'))]"
+onclick = "[GetScriptedGui('vob_filter_interest').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).AddScope('choice', MakeScopeValue('(CFixedPoint)2')).End)]"
+}
+} }widget = { size = { 870 40 } flowcontainer = { direction = horizontal spacing = 8
+button = {
+    using = vob_button_neutral
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 420 40 }
+    text = "vob_region_include"
+
+    down = "[GetVariableSystem.HasValue('vob_region_tab', 'include')]"
+
+    onclick = "[GetVariableSystem.Set('vob_region_tab', 'include')]"
+}button = {
+    using = vob_button_neutral
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 420 40 }
+    text = "vob_region_exclude"
+
+    down = "[GetVariableSystem.HasValue('vob_region_tab', 'exclude')]"
+
+    onclick = "[GetVariableSystem.Set('vob_region_tab', 'exclude')]"
+}
+} }flowcontainer = { direction = vertical spacing = 8 visible = "[GetVariableSystem.HasValue('vob_region_tab', 'include')]" widget = { size = { 870 34 } flowcontainer = { direction = horizontal spacing = 8
+button = {
+    using = vob_button_neutral
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 320 34 }
+    text = "vob_region_enabled"
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+    down = "[EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_include_active').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)1')]"
+
+    onclick = "[GetVariableSystem.Set('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0'))))]"
+onclick = "[GetVariableSystem.Set('vob_last_action', Localize('vob_region_enabled'))]"
+onclick = "[GetScriptedGui('vob_enable_include_regions').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).End)]"
+}button = {
+    using = vob_button_neutral
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 252 34 }
+    text = "vob_region_all"
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+
+
+    onclick = "[GetVariableSystem.Set('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0'))))]"
+onclick = "[GetVariableSystem.Set('vob_last_action', Localize('vob_region_all'))]"
+onclick = "[GetScriptedGui('vob_all_include_regions').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).End)]"
+}button = {
+    using = vob_button_neutral
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 252 34 }
+    text = "vob_region_clear"
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+
+
+    onclick = "[GetVariableSystem.Set('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0'))))]"
+onclick = "[GetVariableSystem.Set('vob_last_action', Localize('vob_region_clear'))]"
+onclick = "[GetScriptedGui('vob_clear_include_regions').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).End)]"
+}
+} } scrollarea = { size = { 875 300 } scrollbarpolicy_horizontal = always_off scrollbarpolicy_vertical = as_needed
+        scrollbar_vertical = { using = vertical_scrollbar } scrollwidget = { fixedgridbox = { datamodel_wrap = 4 flipdirection = yes addcolumn = 217 addrow = 44 datamodel = "[GetPlayer.MakeScope.GetList('vob_regions')]" item = { button = {
+    datacontext = "[Scope.GetStrategicRegion]"
+using = vob_button_neutral
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 210 38 }
+    text = "vob_region_name"
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+    down = "[GetScriptedGui('vob_include_region_selected').IsValid(GuiScope.SetRoot(GetPlayer.MakeScope).AddScope('region', StrategicRegion.MakeScope).End)]"
+
+    onclick = "[GetVariableSystem.Set('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0'))))]"
+onclick = "[GetVariableSystem.Set('vob_last_action', Localize('vob_region_include'))]"
+onclick = "[GetScriptedGui('vob_toggle_include_region').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).AddScope('region', StrategicRegion.MakeScope).End)]"
+} } } } } }flowcontainer = { direction = vertical spacing = 8 visible = "[GetVariableSystem.HasValue('vob_region_tab', 'exclude')]" widget = { size = { 870 34 } flowcontainer = { direction = horizontal spacing = 8
+button = {
+    using = vob_button_neutral
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 320 34 }
+    text = "vob_region_enabled"
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+    down = "[EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_exclude_active').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)1')]"
+
+    onclick = "[GetVariableSystem.Set('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0'))))]"
+onclick = "[GetVariableSystem.Set('vob_last_action', Localize('vob_region_enabled'))]"
+onclick = "[GetScriptedGui('vob_enable_exclude_regions').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).End)]"
+}button = {
+    using = vob_button_neutral
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 252 34 }
+    text = "vob_region_all"
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+
+
+    onclick = "[GetVariableSystem.Set('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0'))))]"
+onclick = "[GetVariableSystem.Set('vob_last_action', Localize('vob_region_all'))]"
+onclick = "[GetScriptedGui('vob_all_exclude_regions').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).End)]"
+}button = {
+    using = vob_button_neutral
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 252 34 }
+    text = "vob_region_clear"
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+
+
+    onclick = "[GetVariableSystem.Set('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0'))))]"
+onclick = "[GetVariableSystem.Set('vob_last_action', Localize('vob_region_clear'))]"
+onclick = "[GetScriptedGui('vob_clear_exclude_regions').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).End)]"
+}
+} } scrollarea = { size = { 875 300 } scrollbarpolicy_horizontal = always_off scrollbarpolicy_vertical = as_needed
+        scrollbar_vertical = { using = vertical_scrollbar } scrollwidget = { fixedgridbox = { datamodel_wrap = 4 flipdirection = yes addcolumn = 217 addrow = 44 datamodel = "[GetPlayer.MakeScope.GetList('vob_regions')]" item = { button = {
+    datacontext = "[Scope.GetStrategicRegion]"
+using = vob_button_neutral
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 210 38 }
+    text = "vob_region_name"
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+    down = "[GetScriptedGui('vob_exclude_region_selected').IsValid(GuiScope.SetRoot(GetPlayer.MakeScope).AddScope('region', StrategicRegion.MakeScope).End)]"
+
+    onclick = "[GetVariableSystem.Set('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0'))))]"
+onclick = "[GetVariableSystem.Set('vob_last_action', Localize('vob_region_exclude'))]"
+onclick = "[GetScriptedGui('vob_toggle_exclude_region').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).AddScope('region', StrategicRegion.MakeScope).End)]"
+} } } } } }flowcontainer = { direction = vertical visible = "[GetScriptedGui('vob_filter_region_active').IsValid(GuiScope.SetRoot(GetPlayer.MakeScope).End)]" textbox = {
+    size = { 864 34 }
+    text = "vob_region_legacy"
+    multiline = yes
+    fontsize = 20
+    align = left|nobaseline
+
+} button = {
+    using = vob_button_neutral
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 430 32 }
+    text = "vob_region_legacy_clear"
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+
+
+    onclick = "[GetVariableSystem.Set('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0'))))]"
+onclick = "[GetVariableSystem.Set('vob_last_action', Localize('vob_region_legacy_clear'))]"
+onclick = "[GetScriptedGui('vob_filter_region_all').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).End)]"
+} }
+} }
+        widget = { position = { 20 650 } size = { 878 42 } button = {
+    using = vob_button_positive
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 878 40 }
+    text = "vob_close_picker"
+
+
+
+    onclick = "[GetVariableSystem.Clear('vob_picker')]"
+} }
+    }widget = { name = "vob_picker_initial_en" size = { 918 230 } parentanchor = center widgetanchor = center
+        visible = "[And(GetVariableSystem.HasValue('vob_picker', 'initial'), Not(EqualTo_string(Localize('vob_ui_language_token'), 'zh')))]" using = clickthrough_blocker background = { using = default_background }
+        widget = { position = { 20 18 } size = { 878 145 } flowcontainer = { direction = vertical spacing = 12
+textbox = {
+    size = { 870 36 }
+    text = "vob_initial_title"
+    multiline = yes
+    fontsize = 22
+    align = left|nobaseline
+
+}widget = { size = { 870 34 } flowcontainer = { direction = horizontal spacing = 6
+button = {
+    using = vob_button_neutral
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 55 34 }
+    text = "vob_all"
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+    down = "[EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_filter_letter').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)0')]"
+
+    onclick = "[GetVariableSystem.Set('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0'))))]"
+onclick = "[GetVariableSystem.Set('vob_last_action', Localize('vob_all'))]"
+onclick = "[GetScriptedGui('vob_filter_letter').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).AddScope('choice', MakeScopeValue('(CFixedPoint)0')).End)]"
+onclick = "[GetVariableSystem.Clear('vob_picker')]"
+}button = {
+    using = vob_button_neutral
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 55 34 }
+    text = "vob_initial_1"
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+    down = "[EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_filter_letter').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)1')]"
+
+    onclick = "[GetVariableSystem.Set('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0'))))]"
+onclick = "[GetVariableSystem.Set('vob_last_action', Localize('vob_initial_1'))]"
+onclick = "[GetScriptedGui('vob_filter_letter').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).AddScope('choice', MakeScopeValue('(CFixedPoint)1')).End)]"
+onclick = "[GetVariableSystem.Clear('vob_picker')]"
+}button = {
+    using = vob_button_neutral
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 55 34 }
+    text = "vob_initial_2"
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+    down = "[EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_filter_letter').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)2')]"
+
+    onclick = "[GetVariableSystem.Set('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0'))))]"
+onclick = "[GetVariableSystem.Set('vob_last_action', Localize('vob_initial_2'))]"
+onclick = "[GetScriptedGui('vob_filter_letter').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).AddScope('choice', MakeScopeValue('(CFixedPoint)2')).End)]"
+onclick = "[GetVariableSystem.Clear('vob_picker')]"
+}button = {
+    using = vob_button_neutral
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 55 34 }
+    text = "vob_initial_3"
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+    down = "[EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_filter_letter').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)3')]"
+
+    onclick = "[GetVariableSystem.Set('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0'))))]"
+onclick = "[GetVariableSystem.Set('vob_last_action', Localize('vob_initial_3'))]"
+onclick = "[GetScriptedGui('vob_filter_letter').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).AddScope('choice', MakeScopeValue('(CFixedPoint)3')).End)]"
+onclick = "[GetVariableSystem.Clear('vob_picker')]"
+}button = {
+    using = vob_button_neutral
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 55 34 }
+    text = "vob_initial_4"
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+    down = "[EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_filter_letter').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)4')]"
+
+    onclick = "[GetVariableSystem.Set('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0'))))]"
+onclick = "[GetVariableSystem.Set('vob_last_action', Localize('vob_initial_4'))]"
+onclick = "[GetScriptedGui('vob_filter_letter').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).AddScope('choice', MakeScopeValue('(CFixedPoint)4')).End)]"
+onclick = "[GetVariableSystem.Clear('vob_picker')]"
+}button = {
+    using = vob_button_neutral
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 55 34 }
+    text = "vob_initial_5"
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+    down = "[EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_filter_letter').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)5')]"
+
+    onclick = "[GetVariableSystem.Set('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0'))))]"
+onclick = "[GetVariableSystem.Set('vob_last_action', Localize('vob_initial_5'))]"
+onclick = "[GetScriptedGui('vob_filter_letter').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).AddScope('choice', MakeScopeValue('(CFixedPoint)5')).End)]"
+onclick = "[GetVariableSystem.Clear('vob_picker')]"
+}button = {
+    using = vob_button_neutral
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 55 34 }
+    text = "vob_initial_6"
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+    down = "[EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_filter_letter').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)6')]"
+
+    onclick = "[GetVariableSystem.Set('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0'))))]"
+onclick = "[GetVariableSystem.Set('vob_last_action', Localize('vob_initial_6'))]"
+onclick = "[GetScriptedGui('vob_filter_letter').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).AddScope('choice', MakeScopeValue('(CFixedPoint)6')).End)]"
+onclick = "[GetVariableSystem.Clear('vob_picker')]"
+}button = {
+    using = vob_button_neutral
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 55 34 }
+    text = "vob_initial_7"
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+    down = "[EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_filter_letter').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)7')]"
+
+    onclick = "[GetVariableSystem.Set('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0'))))]"
+onclick = "[GetVariableSystem.Set('vob_last_action', Localize('vob_initial_7'))]"
+onclick = "[GetScriptedGui('vob_filter_letter').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).AddScope('choice', MakeScopeValue('(CFixedPoint)7')).End)]"
+onclick = "[GetVariableSystem.Clear('vob_picker')]"
+}button = {
+    using = vob_button_neutral
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 55 34 }
+    text = "vob_initial_8"
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+    down = "[EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_filter_letter').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)8')]"
+
+    onclick = "[GetVariableSystem.Set('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0'))))]"
+onclick = "[GetVariableSystem.Set('vob_last_action', Localize('vob_initial_8'))]"
+onclick = "[GetScriptedGui('vob_filter_letter').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).AddScope('choice', MakeScopeValue('(CFixedPoint)8')).End)]"
+onclick = "[GetVariableSystem.Clear('vob_picker')]"
+}button = {
+    using = vob_button_neutral
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 55 34 }
+    text = "vob_initial_9"
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+    down = "[EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_filter_letter').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)9')]"
+
+    onclick = "[GetVariableSystem.Set('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0'))))]"
+onclick = "[GetVariableSystem.Set('vob_last_action', Localize('vob_initial_9'))]"
+onclick = "[GetScriptedGui('vob_filter_letter').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).AddScope('choice', MakeScopeValue('(CFixedPoint)9')).End)]"
+onclick = "[GetVariableSystem.Clear('vob_picker')]"
+}button = {
+    using = vob_button_neutral
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 55 34 }
+    text = "vob_initial_10"
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+    down = "[EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_filter_letter').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)10')]"
+
+    onclick = "[GetVariableSystem.Set('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0'))))]"
+onclick = "[GetVariableSystem.Set('vob_last_action', Localize('vob_initial_10'))]"
+onclick = "[GetScriptedGui('vob_filter_letter').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).AddScope('choice', MakeScopeValue('(CFixedPoint)10')).End)]"
+onclick = "[GetVariableSystem.Clear('vob_picker')]"
+}button = {
+    using = vob_button_neutral
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 55 34 }
+    text = "vob_initial_11"
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+    down = "[EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_filter_letter').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)11')]"
+
+    onclick = "[GetVariableSystem.Set('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0'))))]"
+onclick = "[GetVariableSystem.Set('vob_last_action', Localize('vob_initial_11'))]"
+onclick = "[GetScriptedGui('vob_filter_letter').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).AddScope('choice', MakeScopeValue('(CFixedPoint)11')).End)]"
+onclick = "[GetVariableSystem.Clear('vob_picker')]"
+}button = {
+    using = vob_button_neutral
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 55 34 }
+    text = "vob_initial_12"
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+    down = "[EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_filter_letter').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)12')]"
+
+    onclick = "[GetVariableSystem.Set('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0'))))]"
+onclick = "[GetVariableSystem.Set('vob_last_action', Localize('vob_initial_12'))]"
+onclick = "[GetScriptedGui('vob_filter_letter').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).AddScope('choice', MakeScopeValue('(CFixedPoint)12')).End)]"
+onclick = "[GetVariableSystem.Clear('vob_picker')]"
+}button = {
+    using = vob_button_neutral
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 55 34 }
+    text = "vob_initial_13"
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+    down = "[EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_filter_letter').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)13')]"
+
+    onclick = "[GetVariableSystem.Set('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0'))))]"
+onclick = "[GetVariableSystem.Set('vob_last_action', Localize('vob_initial_13'))]"
+onclick = "[GetScriptedGui('vob_filter_letter').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).AddScope('choice', MakeScopeValue('(CFixedPoint)13')).End)]"
+onclick = "[GetVariableSystem.Clear('vob_picker')]"
+}
+} }widget = { size = { 870 34 } flowcontainer = { direction = horizontal spacing = 6
+button = {
+    using = vob_button_neutral
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 55 34 }
+    text = "vob_initial_14"
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+    down = "[EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_filter_letter').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)14')]"
+
+    onclick = "[GetVariableSystem.Set('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0'))))]"
+onclick = "[GetVariableSystem.Set('vob_last_action', Localize('vob_initial_14'))]"
+onclick = "[GetScriptedGui('vob_filter_letter').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).AddScope('choice', MakeScopeValue('(CFixedPoint)14')).End)]"
+onclick = "[GetVariableSystem.Clear('vob_picker')]"
+}button = {
+    using = vob_button_neutral
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 55 34 }
+    text = "vob_initial_15"
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+    down = "[EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_filter_letter').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)15')]"
+
+    onclick = "[GetVariableSystem.Set('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0'))))]"
+onclick = "[GetVariableSystem.Set('vob_last_action', Localize('vob_initial_15'))]"
+onclick = "[GetScriptedGui('vob_filter_letter').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).AddScope('choice', MakeScopeValue('(CFixedPoint)15')).End)]"
+onclick = "[GetVariableSystem.Clear('vob_picker')]"
+}button = {
+    using = vob_button_neutral
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 55 34 }
+    text = "vob_initial_16"
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+    down = "[EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_filter_letter').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)16')]"
+
+    onclick = "[GetVariableSystem.Set('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0'))))]"
+onclick = "[GetVariableSystem.Set('vob_last_action', Localize('vob_initial_16'))]"
+onclick = "[GetScriptedGui('vob_filter_letter').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).AddScope('choice', MakeScopeValue('(CFixedPoint)16')).End)]"
+onclick = "[GetVariableSystem.Clear('vob_picker')]"
+}button = {
+    using = vob_button_neutral
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 55 34 }
+    text = "vob_initial_17"
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+    down = "[EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_filter_letter').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)17')]"
+
+    onclick = "[GetVariableSystem.Set('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0'))))]"
+onclick = "[GetVariableSystem.Set('vob_last_action', Localize('vob_initial_17'))]"
+onclick = "[GetScriptedGui('vob_filter_letter').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).AddScope('choice', MakeScopeValue('(CFixedPoint)17')).End)]"
+onclick = "[GetVariableSystem.Clear('vob_picker')]"
+}button = {
+    using = vob_button_neutral
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 55 34 }
+    text = "vob_initial_18"
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+    down = "[EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_filter_letter').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)18')]"
+
+    onclick = "[GetVariableSystem.Set('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0'))))]"
+onclick = "[GetVariableSystem.Set('vob_last_action', Localize('vob_initial_18'))]"
+onclick = "[GetScriptedGui('vob_filter_letter').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).AddScope('choice', MakeScopeValue('(CFixedPoint)18')).End)]"
+onclick = "[GetVariableSystem.Clear('vob_picker')]"
+}button = {
+    using = vob_button_neutral
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 55 34 }
+    text = "vob_initial_19"
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+    down = "[EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_filter_letter').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)19')]"
+
+    onclick = "[GetVariableSystem.Set('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0'))))]"
+onclick = "[GetVariableSystem.Set('vob_last_action', Localize('vob_initial_19'))]"
+onclick = "[GetScriptedGui('vob_filter_letter').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).AddScope('choice', MakeScopeValue('(CFixedPoint)19')).End)]"
+onclick = "[GetVariableSystem.Clear('vob_picker')]"
+}button = {
+    using = vob_button_neutral
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 55 34 }
+    text = "vob_initial_20"
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+    down = "[EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_filter_letter').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)20')]"
+
+    onclick = "[GetVariableSystem.Set('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0'))))]"
+onclick = "[GetVariableSystem.Set('vob_last_action', Localize('vob_initial_20'))]"
+onclick = "[GetScriptedGui('vob_filter_letter').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).AddScope('choice', MakeScopeValue('(CFixedPoint)20')).End)]"
+onclick = "[GetVariableSystem.Clear('vob_picker')]"
+}button = {
+    using = vob_button_neutral
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 55 34 }
+    text = "vob_initial_21"
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+    down = "[EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_filter_letter').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)21')]"
+
+    onclick = "[GetVariableSystem.Set('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0'))))]"
+onclick = "[GetVariableSystem.Set('vob_last_action', Localize('vob_initial_21'))]"
+onclick = "[GetScriptedGui('vob_filter_letter').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).AddScope('choice', MakeScopeValue('(CFixedPoint)21')).End)]"
+onclick = "[GetVariableSystem.Clear('vob_picker')]"
+}button = {
+    using = vob_button_neutral
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 55 34 }
+    text = "vob_initial_22"
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+    down = "[EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_filter_letter').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)22')]"
+
+    onclick = "[GetVariableSystem.Set('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0'))))]"
+onclick = "[GetVariableSystem.Set('vob_last_action', Localize('vob_initial_22'))]"
+onclick = "[GetScriptedGui('vob_filter_letter').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).AddScope('choice', MakeScopeValue('(CFixedPoint)22')).End)]"
+onclick = "[GetVariableSystem.Clear('vob_picker')]"
+}button = {
+    using = vob_button_neutral
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 55 34 }
+    text = "vob_initial_23"
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+    down = "[EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_filter_letter').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)23')]"
+
+    onclick = "[GetVariableSystem.Set('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0'))))]"
+onclick = "[GetVariableSystem.Set('vob_last_action', Localize('vob_initial_23'))]"
+onclick = "[GetScriptedGui('vob_filter_letter').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).AddScope('choice', MakeScopeValue('(CFixedPoint)23')).End)]"
+onclick = "[GetVariableSystem.Clear('vob_picker')]"
+}button = {
+    using = vob_button_neutral
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 55 34 }
+    text = "vob_initial_24"
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+    down = "[EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_filter_letter').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)24')]"
+
+    onclick = "[GetVariableSystem.Set('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0'))))]"
+onclick = "[GetVariableSystem.Set('vob_last_action', Localize('vob_initial_24'))]"
+onclick = "[GetScriptedGui('vob_filter_letter').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).AddScope('choice', MakeScopeValue('(CFixedPoint)24')).End)]"
+onclick = "[GetVariableSystem.Clear('vob_picker')]"
+}button = {
+    using = vob_button_neutral
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 55 34 }
+    text = "vob_initial_25"
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+    down = "[EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_filter_letter').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)25')]"
+
+    onclick = "[GetVariableSystem.Set('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0'))))]"
+onclick = "[GetVariableSystem.Set('vob_last_action', Localize('vob_initial_25'))]"
+onclick = "[GetScriptedGui('vob_filter_letter').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).AddScope('choice', MakeScopeValue('(CFixedPoint)25')).End)]"
+onclick = "[GetVariableSystem.Clear('vob_picker')]"
+}button = {
+    using = vob_button_neutral
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 55 34 }
+    text = "vob_initial_26"
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+    down = "[EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_filter_letter').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)26')]"
+
+    onclick = "[GetVariableSystem.Set('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0'))))]"
+onclick = "[GetVariableSystem.Set('vob_last_action', Localize('vob_initial_26'))]"
+onclick = "[GetScriptedGui('vob_filter_letter').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).AddScope('choice', MakeScopeValue('(CFixedPoint)26')).End)]"
+onclick = "[GetVariableSystem.Clear('vob_picker')]"
+}button = {
+    using = vob_button_neutral
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 55 34 }
+    text = "vob_initial_27"
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+    down = "[EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_filter_letter').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)27')]"
+
+    onclick = "[GetVariableSystem.Set('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0'))))]"
+onclick = "[GetVariableSystem.Set('vob_last_action', Localize('vob_initial_27'))]"
+onclick = "[GetScriptedGui('vob_filter_letter').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).AddScope('choice', MakeScopeValue('(CFixedPoint)27')).End)]"
+onclick = "[GetVariableSystem.Clear('vob_picker')]"
+}
+} }
+} }
+        widget = { position = { 20 170 } size = { 878 42 } button = {
+    using = vob_button_positive
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 878 40 }
+    text = "vob_close_picker"
+
+
+
+    onclick = "[GetVariableSystem.Clear('vob_picker')]"
+} }
+    }widget = { name = "vob_picker_initial_zh" size = { 918 300 } parentanchor = center widgetanchor = center
+        visible = "[And(GetVariableSystem.HasValue('vob_picker', 'initial'), EqualTo_string(Localize('vob_ui_language_token'), 'zh'))]" using = clickthrough_blocker background = { using = default_background }
+        widget = { position = { 20 18 } size = { 878 215 } flowcontainer = { direction = vertical spacing = 12
+textbox = {
+    size = { 870 36 }
+    text = "vob_initial_title"
+    multiline = yes
+    fontsize = 22
+    align = left|nobaseline
+
+}widget = { size = { 870 38 } flowcontainer = { direction = horizontal spacing = 8
+button = {
+    using = vob_button_neutral
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 310 38 }
+    text = "vob_initial_language_value"
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+
+    visible = "[Not(GetVariableSystem.Exists('vob_initial_language_menu'))]"
+    onclick = "[GetVariableSystem.Set('vob_initial_language_menu', 'yes')]"
+}button = {
+    using = vob_button_neutral
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 310 38 }
+    text = "vob_initial_language_value"
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+    down = "[GetVariableSystem.Exists('vob_initial_language_menu')]"
+    visible = "[GetVariableSystem.Exists('vob_initial_language_menu')]"
+    onclick = "[GetVariableSystem.Clear('vob_initial_language_menu')]"
+}textbox = {
+    size = { 545 38 }
+    text = "vob_initial_switch_hint"
+    multiline = yes
+    fontsize = 20
+    align = left|nobaseline
+
+}
+} }widget = { size = { 870 82 } visible = "[GetVariableSystem.Exists('vob_initial_language_menu')]" flowcontainer = { direction = vertical spacing = 6
+button = {
+    using = vob_button_neutral
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 310 34 }
+    text = "vob_initial_choose_zh"
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+    down = "[EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_initial_language').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)1')]"
+
+    onclick = "[GetVariableSystem.Set('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0'))))]"
+onclick = "[GetVariableSystem.Set('vob_last_action', Localize('vob_initial_choose_zh'))]"
+onclick = "[GetScriptedGui('vob_initial_language').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).AddScope('choice', MakeScopeValue('(CFixedPoint)1')).End)]"
+onclick = "[GetVariableSystem.Clear('vob_initial_language_menu')]"
+}button = {
+    using = vob_button_neutral
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 310 34 }
+    text = "vob_initial_choose_en"
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+    down = "[EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_initial_language').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)2')]"
+
+    onclick = "[GetVariableSystem.Set('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0'))))]"
+onclick = "[GetVariableSystem.Set('vob_last_action', Localize('vob_initial_choose_en'))]"
+onclick = "[GetScriptedGui('vob_initial_language').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).AddScope('choice', MakeScopeValue('(CFixedPoint)2')).End)]"
+onclick = "[GetVariableSystem.Clear('vob_initial_language_menu')]"
+}
+} }widget = { size = { 870 82 } visible = "[Not(GetVariableSystem.Exists('vob_initial_language_menu'))]" flowcontainer = { direction = vertical spacing = 12
+widget = { size = { 870 34 } flowcontainer = { direction = horizontal spacing = 6
+button = {
+    using = vob_button_neutral
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 55 34 }
+    text = "vob_all"
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+    down = "[EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_filter_letter').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)0')]"
+
+    onclick = "[GetVariableSystem.Set('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0'))))]"
+onclick = "[GetVariableSystem.Set('vob_last_action', Localize('vob_all'))]"
+onclick = "[GetScriptedGui('vob_filter_letter').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).AddScope('choice', MakeScopeValue('(CFixedPoint)0')).End)]"
+onclick = "[GetVariableSystem.Clear('vob_picker')]"
+}button = {
+    using = vob_button_neutral
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 55 34 }
+    text = "vob_initial_1"
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+    down = "[EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_filter_letter').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)1')]"
+
+    onclick = "[GetVariableSystem.Set('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0'))))]"
+onclick = "[GetVariableSystem.Set('vob_last_action', Localize('vob_initial_1'))]"
+onclick = "[GetScriptedGui('vob_filter_letter').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).AddScope('choice', MakeScopeValue('(CFixedPoint)1')).End)]"
+onclick = "[GetVariableSystem.Clear('vob_picker')]"
+}button = {
+    using = vob_button_neutral
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 55 34 }
+    text = "vob_initial_2"
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+    down = "[EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_filter_letter').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)2')]"
+
+    onclick = "[GetVariableSystem.Set('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0'))))]"
+onclick = "[GetVariableSystem.Set('vob_last_action', Localize('vob_initial_2'))]"
+onclick = "[GetScriptedGui('vob_filter_letter').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).AddScope('choice', MakeScopeValue('(CFixedPoint)2')).End)]"
+onclick = "[GetVariableSystem.Clear('vob_picker')]"
+}button = {
+    using = vob_button_neutral
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 55 34 }
+    text = "vob_initial_3"
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+    down = "[EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_filter_letter').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)3')]"
+
+    onclick = "[GetVariableSystem.Set('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0'))))]"
+onclick = "[GetVariableSystem.Set('vob_last_action', Localize('vob_initial_3'))]"
+onclick = "[GetScriptedGui('vob_filter_letter').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).AddScope('choice', MakeScopeValue('(CFixedPoint)3')).End)]"
+onclick = "[GetVariableSystem.Clear('vob_picker')]"
+}button = {
+    using = vob_button_neutral
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 55 34 }
+    text = "vob_initial_4"
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+    down = "[EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_filter_letter').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)4')]"
+
+    onclick = "[GetVariableSystem.Set('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0'))))]"
+onclick = "[GetVariableSystem.Set('vob_last_action', Localize('vob_initial_4'))]"
+onclick = "[GetScriptedGui('vob_filter_letter').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).AddScope('choice', MakeScopeValue('(CFixedPoint)4')).End)]"
+onclick = "[GetVariableSystem.Clear('vob_picker')]"
+}button = {
+    using = vob_button_neutral
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 55 34 }
+    text = "vob_initial_5"
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+    down = "[EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_filter_letter').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)5')]"
+
+    onclick = "[GetVariableSystem.Set('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0'))))]"
+onclick = "[GetVariableSystem.Set('vob_last_action', Localize('vob_initial_5'))]"
+onclick = "[GetScriptedGui('vob_filter_letter').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).AddScope('choice', MakeScopeValue('(CFixedPoint)5')).End)]"
+onclick = "[GetVariableSystem.Clear('vob_picker')]"
+}button = {
+    using = vob_button_neutral
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 55 34 }
+    text = "vob_initial_6"
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+    down = "[EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_filter_letter').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)6')]"
+
+    onclick = "[GetVariableSystem.Set('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0'))))]"
+onclick = "[GetVariableSystem.Set('vob_last_action', Localize('vob_initial_6'))]"
+onclick = "[GetScriptedGui('vob_filter_letter').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).AddScope('choice', MakeScopeValue('(CFixedPoint)6')).End)]"
+onclick = "[GetVariableSystem.Clear('vob_picker')]"
+}button = {
+    using = vob_button_neutral
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 55 34 }
+    text = "vob_initial_7"
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+    down = "[EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_filter_letter').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)7')]"
+
+    onclick = "[GetVariableSystem.Set('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0'))))]"
+onclick = "[GetVariableSystem.Set('vob_last_action', Localize('vob_initial_7'))]"
+onclick = "[GetScriptedGui('vob_filter_letter').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).AddScope('choice', MakeScopeValue('(CFixedPoint)7')).End)]"
+onclick = "[GetVariableSystem.Clear('vob_picker')]"
+}button = {
+    using = vob_button_neutral
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 55 34 }
+    text = "vob_initial_8"
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+    down = "[EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_filter_letter').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)8')]"
+
+    onclick = "[GetVariableSystem.Set('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0'))))]"
+onclick = "[GetVariableSystem.Set('vob_last_action', Localize('vob_initial_8'))]"
+onclick = "[GetScriptedGui('vob_filter_letter').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).AddScope('choice', MakeScopeValue('(CFixedPoint)8')).End)]"
+onclick = "[GetVariableSystem.Clear('vob_picker')]"
+}button = {
+    using = vob_button_neutral
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 55 34 }
+    text = "vob_initial_9"
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+    down = "[EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_filter_letter').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)9')]"
+
+    onclick = "[GetVariableSystem.Set('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0'))))]"
+onclick = "[GetVariableSystem.Set('vob_last_action', Localize('vob_initial_9'))]"
+onclick = "[GetScriptedGui('vob_filter_letter').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).AddScope('choice', MakeScopeValue('(CFixedPoint)9')).End)]"
+onclick = "[GetVariableSystem.Clear('vob_picker')]"
+}button = {
+    using = vob_button_neutral
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 55 34 }
+    text = "vob_initial_10"
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+    down = "[EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_filter_letter').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)10')]"
+
+    onclick = "[GetVariableSystem.Set('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0'))))]"
+onclick = "[GetVariableSystem.Set('vob_last_action', Localize('vob_initial_10'))]"
+onclick = "[GetScriptedGui('vob_filter_letter').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).AddScope('choice', MakeScopeValue('(CFixedPoint)10')).End)]"
+onclick = "[GetVariableSystem.Clear('vob_picker')]"
+}button = {
+    using = vob_button_neutral
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 55 34 }
+    text = "vob_initial_11"
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+    down = "[EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_filter_letter').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)11')]"
+
+    onclick = "[GetVariableSystem.Set('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0'))))]"
+onclick = "[GetVariableSystem.Set('vob_last_action', Localize('vob_initial_11'))]"
+onclick = "[GetScriptedGui('vob_filter_letter').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).AddScope('choice', MakeScopeValue('(CFixedPoint)11')).End)]"
+onclick = "[GetVariableSystem.Clear('vob_picker')]"
+}button = {
+    using = vob_button_neutral
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 55 34 }
+    text = "vob_initial_12"
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+    down = "[EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_filter_letter').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)12')]"
+
+    onclick = "[GetVariableSystem.Set('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0'))))]"
+onclick = "[GetVariableSystem.Set('vob_last_action', Localize('vob_initial_12'))]"
+onclick = "[GetScriptedGui('vob_filter_letter').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).AddScope('choice', MakeScopeValue('(CFixedPoint)12')).End)]"
+onclick = "[GetVariableSystem.Clear('vob_picker')]"
+}button = {
+    using = vob_button_neutral
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 55 34 }
+    text = "vob_initial_13"
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+    down = "[EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_filter_letter').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)13')]"
+
+    onclick = "[GetVariableSystem.Set('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0'))))]"
+onclick = "[GetVariableSystem.Set('vob_last_action', Localize('vob_initial_13'))]"
+onclick = "[GetScriptedGui('vob_filter_letter').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).AddScope('choice', MakeScopeValue('(CFixedPoint)13')).End)]"
+onclick = "[GetVariableSystem.Clear('vob_picker')]"
+}
+} }widget = { size = { 870 34 } flowcontainer = { direction = horizontal spacing = 6
+button = {
+    using = vob_button_neutral
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 55 34 }
+    text = "vob_initial_14"
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+    down = "[EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_filter_letter').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)14')]"
+
+    onclick = "[GetVariableSystem.Set('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0'))))]"
+onclick = "[GetVariableSystem.Set('vob_last_action', Localize('vob_initial_14'))]"
+onclick = "[GetScriptedGui('vob_filter_letter').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).AddScope('choice', MakeScopeValue('(CFixedPoint)14')).End)]"
+onclick = "[GetVariableSystem.Clear('vob_picker')]"
+}button = {
+    using = vob_button_neutral
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 55 34 }
+    text = "vob_initial_15"
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+    down = "[EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_filter_letter').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)15')]"
+
+    onclick = "[GetVariableSystem.Set('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0'))))]"
+onclick = "[GetVariableSystem.Set('vob_last_action', Localize('vob_initial_15'))]"
+onclick = "[GetScriptedGui('vob_filter_letter').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).AddScope('choice', MakeScopeValue('(CFixedPoint)15')).End)]"
+onclick = "[GetVariableSystem.Clear('vob_picker')]"
+}button = {
+    using = vob_button_neutral
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 55 34 }
+    text = "vob_initial_16"
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+    down = "[EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_filter_letter').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)16')]"
+
+    onclick = "[GetVariableSystem.Set('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0'))))]"
+onclick = "[GetVariableSystem.Set('vob_last_action', Localize('vob_initial_16'))]"
+onclick = "[GetScriptedGui('vob_filter_letter').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).AddScope('choice', MakeScopeValue('(CFixedPoint)16')).End)]"
+onclick = "[GetVariableSystem.Clear('vob_picker')]"
+}button = {
+    using = vob_button_neutral
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 55 34 }
+    text = "vob_initial_17"
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+    down = "[EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_filter_letter').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)17')]"
+
+    onclick = "[GetVariableSystem.Set('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0'))))]"
+onclick = "[GetVariableSystem.Set('vob_last_action', Localize('vob_initial_17'))]"
+onclick = "[GetScriptedGui('vob_filter_letter').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).AddScope('choice', MakeScopeValue('(CFixedPoint)17')).End)]"
+onclick = "[GetVariableSystem.Clear('vob_picker')]"
+}button = {
+    using = vob_button_neutral
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 55 34 }
+    text = "vob_initial_18"
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+    down = "[EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_filter_letter').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)18')]"
+
+    onclick = "[GetVariableSystem.Set('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0'))))]"
+onclick = "[GetVariableSystem.Set('vob_last_action', Localize('vob_initial_18'))]"
+onclick = "[GetScriptedGui('vob_filter_letter').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).AddScope('choice', MakeScopeValue('(CFixedPoint)18')).End)]"
+onclick = "[GetVariableSystem.Clear('vob_picker')]"
+}button = {
+    using = vob_button_neutral
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 55 34 }
+    text = "vob_initial_19"
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+    down = "[EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_filter_letter').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)19')]"
+
+    onclick = "[GetVariableSystem.Set('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0'))))]"
+onclick = "[GetVariableSystem.Set('vob_last_action', Localize('vob_initial_19'))]"
+onclick = "[GetScriptedGui('vob_filter_letter').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).AddScope('choice', MakeScopeValue('(CFixedPoint)19')).End)]"
+onclick = "[GetVariableSystem.Clear('vob_picker')]"
+}button = {
+    using = vob_button_neutral
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 55 34 }
+    text = "vob_initial_20"
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+    down = "[EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_filter_letter').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)20')]"
+
+    onclick = "[GetVariableSystem.Set('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0'))))]"
+onclick = "[GetVariableSystem.Set('vob_last_action', Localize('vob_initial_20'))]"
+onclick = "[GetScriptedGui('vob_filter_letter').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).AddScope('choice', MakeScopeValue('(CFixedPoint)20')).End)]"
+onclick = "[GetVariableSystem.Clear('vob_picker')]"
+}button = {
+    using = vob_button_neutral
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 55 34 }
+    text = "vob_initial_21"
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+    down = "[EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_filter_letter').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)21')]"
+
+    onclick = "[GetVariableSystem.Set('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0'))))]"
+onclick = "[GetVariableSystem.Set('vob_last_action', Localize('vob_initial_21'))]"
+onclick = "[GetScriptedGui('vob_filter_letter').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).AddScope('choice', MakeScopeValue('(CFixedPoint)21')).End)]"
+onclick = "[GetVariableSystem.Clear('vob_picker')]"
+}button = {
+    using = vob_button_neutral
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 55 34 }
+    text = "vob_initial_22"
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+    down = "[EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_filter_letter').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)22')]"
+
+    onclick = "[GetVariableSystem.Set('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0'))))]"
+onclick = "[GetVariableSystem.Set('vob_last_action', Localize('vob_initial_22'))]"
+onclick = "[GetScriptedGui('vob_filter_letter').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).AddScope('choice', MakeScopeValue('(CFixedPoint)22')).End)]"
+onclick = "[GetVariableSystem.Clear('vob_picker')]"
+}button = {
+    using = vob_button_neutral
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 55 34 }
+    text = "vob_initial_23"
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+    down = "[EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_filter_letter').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)23')]"
+
+    onclick = "[GetVariableSystem.Set('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0'))))]"
+onclick = "[GetVariableSystem.Set('vob_last_action', Localize('vob_initial_23'))]"
+onclick = "[GetScriptedGui('vob_filter_letter').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).AddScope('choice', MakeScopeValue('(CFixedPoint)23')).End)]"
+onclick = "[GetVariableSystem.Clear('vob_picker')]"
+}button = {
+    using = vob_button_neutral
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 55 34 }
+    text = "vob_initial_24"
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+    down = "[EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_filter_letter').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)24')]"
+
+    onclick = "[GetVariableSystem.Set('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0'))))]"
+onclick = "[GetVariableSystem.Set('vob_last_action', Localize('vob_initial_24'))]"
+onclick = "[GetScriptedGui('vob_filter_letter').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).AddScope('choice', MakeScopeValue('(CFixedPoint)24')).End)]"
+onclick = "[GetVariableSystem.Clear('vob_picker')]"
+}button = {
+    using = vob_button_neutral
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 55 34 }
+    text = "vob_initial_25"
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+    down = "[EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_filter_letter').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)25')]"
+
+    onclick = "[GetVariableSystem.Set('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0'))))]"
+onclick = "[GetVariableSystem.Set('vob_last_action', Localize('vob_initial_25'))]"
+onclick = "[GetScriptedGui('vob_filter_letter').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).AddScope('choice', MakeScopeValue('(CFixedPoint)25')).End)]"
+onclick = "[GetVariableSystem.Clear('vob_picker')]"
+}button = {
+    using = vob_button_neutral
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 55 34 }
+    text = "vob_initial_26"
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+    down = "[EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_filter_letter').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)26')]"
+
+    onclick = "[GetVariableSystem.Set('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0'))))]"
+onclick = "[GetVariableSystem.Set('vob_last_action', Localize('vob_initial_26'))]"
+onclick = "[GetScriptedGui('vob_filter_letter').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).AddScope('choice', MakeScopeValue('(CFixedPoint)26')).End)]"
+onclick = "[GetVariableSystem.Clear('vob_picker')]"
+}button = {
+    using = vob_button_neutral
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 55 34 }
+    text = "vob_initial_27"
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+    down = "[EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_filter_letter').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)27')]"
+
+    onclick = "[GetVariableSystem.Set('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0'))))]"
+onclick = "[GetVariableSystem.Set('vob_last_action', Localize('vob_initial_27'))]"
+onclick = "[GetScriptedGui('vob_filter_letter').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).AddScope('choice', MakeScopeValue('(CFixedPoint)27')).End)]"
+onclick = "[GetVariableSystem.Clear('vob_picker')]"
+}
+} }
+} }
+} }
+        widget = { position = { 20 240 } size = { 878 42 } button = {
+    using = vob_button_positive
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 878 40 }
+    text = "vob_close_picker"
+
+
+
+    onclick = "[GetVariableSystem.Clear('vob_picker')]"
+} }
+    }widget = { name = "vob_picker_rank" size = { 918 238 } parentanchor = center widgetanchor = center
+        visible = "[GetVariableSystem.HasValue('vob_picker', 'rank')]" using = clickthrough_blocker background = { using = default_background }
+        widget = { position = { 20 18 } size = { 878 153 } flowcontainer = { direction = vertical spacing = 12
+textbox = {
+    size = { 870 36 }
+    text = "vob_rank_title"
+    multiline = yes
+    fontsize = 22
+    align = left|nobaseline
+
+}widget = { size = { 870 38 } flowcontainer = { direction = horizontal spacing = 8
+button = {
+    using = vob_button_neutral
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 165 38 }
+    text = "vob_rank_0"
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+    down = "[EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_filter_rank').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)0')]"
+
+    onclick = "[GetVariableSystem.Set('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0'))))]"
+onclick = "[GetVariableSystem.Set('vob_last_action', Localize('vob_rank_0'))]"
+onclick = "[GetScriptedGui('vob_filter_rank').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).AddScope('choice', MakeScopeValue('(CFixedPoint)0')).End)]"
+onclick = "[GetVariableSystem.Clear('vob_picker')]"
+}button = {
+    using = vob_button_neutral
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 165 38 }
+    text = "vob_rank_1"
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+    down = "[EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_filter_rank').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)1')]"
+
+    onclick = "[GetVariableSystem.Set('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0'))))]"
+onclick = "[GetVariableSystem.Set('vob_last_action', Localize('vob_rank_1'))]"
+onclick = "[GetScriptedGui('vob_filter_rank').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).AddScope('choice', MakeScopeValue('(CFixedPoint)1')).End)]"
+onclick = "[GetVariableSystem.Clear('vob_picker')]"
+}button = {
+    using = vob_button_neutral
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 165 38 }
+    text = "vob_rank_2"
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+    down = "[EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_filter_rank').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)2')]"
+
+    onclick = "[GetVariableSystem.Set('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0'))))]"
+onclick = "[GetVariableSystem.Set('vob_last_action', Localize('vob_rank_2'))]"
+onclick = "[GetScriptedGui('vob_filter_rank').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).AddScope('choice', MakeScopeValue('(CFixedPoint)2')).End)]"
+onclick = "[GetVariableSystem.Clear('vob_picker')]"
+}button = {
+    using = vob_button_neutral
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 165 38 }
+    text = "vob_rank_3"
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+    down = "[EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_filter_rank').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)3')]"
+
+    onclick = "[GetVariableSystem.Set('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0'))))]"
+onclick = "[GetVariableSystem.Set('vob_last_action', Localize('vob_rank_3'))]"
+onclick = "[GetScriptedGui('vob_filter_rank').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).AddScope('choice', MakeScopeValue('(CFixedPoint)3')).End)]"
+onclick = "[GetVariableSystem.Clear('vob_picker')]"
+}button = {
+    using = vob_button_neutral
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 165 38 }
+    text = "vob_rank_4"
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+    down = "[EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_filter_rank').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)4')]"
+
+    onclick = "[GetVariableSystem.Set('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0'))))]"
+onclick = "[GetVariableSystem.Set('vob_last_action', Localize('vob_rank_4'))]"
+onclick = "[GetScriptedGui('vob_filter_rank').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).AddScope('choice', MakeScopeValue('(CFixedPoint)4')).End)]"
+onclick = "[GetVariableSystem.Clear('vob_picker')]"
+}
+} }widget = { size = { 870 38 } flowcontainer = { direction = horizontal spacing = 8
+button = {
+    using = vob_button_neutral
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 165 38 }
+    text = "vob_rank_5"
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+    down = "[EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_filter_rank').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)5')]"
+
+    onclick = "[GetVariableSystem.Set('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0'))))]"
+onclick = "[GetVariableSystem.Set('vob_last_action', Localize('vob_rank_5'))]"
+onclick = "[GetScriptedGui('vob_filter_rank').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).AddScope('choice', MakeScopeValue('(CFixedPoint)5')).End)]"
+onclick = "[GetVariableSystem.Clear('vob_picker')]"
+}button = {
+    using = vob_button_neutral
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 165 38 }
+    text = "vob_rank_6"
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+    down = "[EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_filter_rank').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)6')]"
+
+    onclick = "[GetVariableSystem.Set('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0'))))]"
+onclick = "[GetVariableSystem.Set('vob_last_action', Localize('vob_rank_6'))]"
+onclick = "[GetScriptedGui('vob_filter_rank').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).AddScope('choice', MakeScopeValue('(CFixedPoint)6')).End)]"
+onclick = "[GetVariableSystem.Clear('vob_picker')]"
+}button = {
+    using = vob_button_neutral
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 165 38 }
+    text = "vob_rank_7"
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+    down = "[EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_filter_rank').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)7')]"
+
+    onclick = "[GetVariableSystem.Set('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0'))))]"
+onclick = "[GetVariableSystem.Set('vob_last_action', Localize('vob_rank_7'))]"
+onclick = "[GetScriptedGui('vob_filter_rank').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).AddScope('choice', MakeScopeValue('(CFixedPoint)7')).End)]"
+onclick = "[GetVariableSystem.Clear('vob_picker')]"
+}button = {
+    using = vob_button_neutral
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 165 38 }
+    text = "vob_rank_8"
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+    down = "[EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_filter_rank').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)8')]"
+
+    onclick = "[GetVariableSystem.Set('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0'))))]"
+onclick = "[GetVariableSystem.Set('vob_last_action', Localize('vob_rank_8'))]"
+onclick = "[GetScriptedGui('vob_filter_rank').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).AddScope('choice', MakeScopeValue('(CFixedPoint)8')).End)]"
+onclick = "[GetVariableSystem.Clear('vob_picker')]"
+}
+} }
+} }
+        widget = { position = { 20 178 } size = { 878 42 } button = {
+    using = vob_button_positive
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 878 40 }
+    text = "vob_close_picker"
+
+
+
+    onclick = "[GetVariableSystem.Clear('vob_picker')]"
+} }
+    }widget = { name = "vob_picker_interest" size = { 918 192 } parentanchor = center widgetanchor = center
+        visible = "[GetVariableSystem.HasValue('vob_picker', 'interest')]" using = clickthrough_blocker background = { using = default_background }
+        widget = { position = { 20 18 } size = { 878 107 } flowcontainer = { direction = vertical spacing = 12
+textbox = {
+    size = { 870 36 }
+    text = "vob_interest_title"
+    multiline = yes
+    fontsize = 22
+    align = left|nobaseline
+
+}widget = { size = { 870 40 } flowcontainer = { direction = horizontal spacing = 8
+button = {
+    using = vob_button_neutral
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 280 40 }
+    text = "vob_all"
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+    down = "[EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_filter_interest').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)0')]"
+
+    onclick = "[GetVariableSystem.Set('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0'))))]"
+onclick = "[GetVariableSystem.Set('vob_last_action', Localize('vob_all'))]"
+onclick = "[GetScriptedGui('vob_filter_interest').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).AddScope('choice', MakeScopeValue('(CFixedPoint)0')).End)]"
+onclick = "[GetVariableSystem.Clear('vob_picker')]"
+}button = {
+    using = vob_button_neutral
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 280 40 }
+    text = "vob_interest_1"
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+    down = "[EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_filter_interest').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)1')]"
+
+    onclick = "[GetVariableSystem.Set('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0'))))]"
+onclick = "[GetVariableSystem.Set('vob_last_action', Localize('vob_interest_1'))]"
+onclick = "[GetScriptedGui('vob_filter_interest').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).AddScope('choice', MakeScopeValue('(CFixedPoint)1')).End)]"
+onclick = "[GetVariableSystem.Clear('vob_picker')]"
+}button = {
+    using = vob_button_neutral
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 280 40 }
+    text = "vob_interest_2"
+    enabled = "[And(Not(GetVariableSystem.Exists('vob_armed')), And(Not(GetVariableSystem.Exists('vob_begin_pending')), Not(GetVariableSystem.Exists('vob_cleanup_pending'))))]"
+    down = "[EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_filter_interest').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)2')]"
+
+    onclick = "[GetVariableSystem.Set('vob_reply_before', ToString_int32(FixedPointToInt(GetPlayer.MakeScope.Var('vob_ui_reply').GetValueWithDefault('(CFixedPoint)0'))))]"
+onclick = "[GetVariableSystem.Set('vob_last_action', Localize('vob_interest_2'))]"
+onclick = "[GetScriptedGui('vob_filter_interest').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).AddScope('choice', MakeScopeValue('(CFixedPoint)2')).End)]"
+onclick = "[GetVariableSystem.Clear('vob_picker')]"
+}
+} }
+} }
+        widget = { position = { 20 132 } size = { 878 42 } button = {
+    using = vob_button_positive
+    blockoverride "sound" { using = ui_checkbox }
+    size = { 878 40 }
+    text = "vob_close_picker"
+
+
+
+    onclick = "[GetVariableSystem.Clear('vob_picker')]"
+} }
+    }widget = { name = "vob_picker_about" size = { 600 342 } parentanchor = center widgetanchor = center
+        visible = "[GetVariableSystem.HasValue('vob_picker', 'about')]" using = clickthrough_blocker background = { using = default_background }
+        close_button = { position = { 556 12 } size = { 30 30 }
+            blockoverride "sound" { using = ui_checkbox } onclick = "[GetVariableSystem.Clear('vob_picker')]" }
+        icon = { position = { 77 30 } size = { 144 144 } texture = "gfx/interface/vob/author_avatar.dds" alwaystransparent = yes }
+        textbox = { position = { 35 190 } size = { 228 44 } text = "vob_author_id" fontsize = 32 align = center alwaystransparent = yes }
+        icon = { position = { 75 245 } size = { 149 75 } texture = "gfx/interface/vob/author_bilibili.dds" alwaystransparent = yes }
+        icon = { position = { 311 68 } size = { 232 232 } texture = "gfx/interface/vob/author_qr.dds" alwaystransparent = yes }
+    }}
+}
+type vob_treaty_worker = widget {
+size = { 1 1 }
+alwaystransparent = yes
+
+    widget = {
+        name = "vob_set_binding"
+        size = { 1 1 }
+        alwaystransparent = yes
+        state = {
+            name = vob_run
+            trigger_when = "[And(And(And(GetVariableSystem.Exists('vob_armed'), And(And(IsInGame, And(GetPlayer.IsValid, And(Not(GetMetaPlayer.IsObserver), And(Not(GameIsMultiplayer), And(Not(IsPauseMenuShown), Not(IsGameOverScreenShown)))))), IsGamePaused)), And(TreatyDraft.IsValidDataContext, And(ObjectsEqual(TreatyDraft.GetLeftCountry.Self, GetPlayer.Self), And(ObjectsEqual(TreatyDraft.GetRightCountry.Self, GetPlayer.MakeScope.Var('vob_target').GetCountry.Self), Not(TreatyDraft.IsRenegotiation))))), And(EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_phase').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)2'), And(And(IsDataModelEmpty(TreatyDraft.GetSelectedOffers), And(IsDataModelEmpty(TreatyDraft.GetSelectedDemands), IsDataModelEmpty(TreatyDraft.GetSelectedMutualAgreements))), And(Not(TreatyDraft.WillOweObligation(TreatyDraft.GetLeftCountry.Self)), And(Not(TreatyDraft.WillAskForObligation(TreatyDraft.GetLeftCountry.Self)), Not(TreatyDraft.WillCallInObligation(TreatyDraft.GetLeftCountry.Self)))))))]"
+            on_start = "[TreatyDraft.SetBindingDays(FixedPointToInt(GetPlayer.MakeScope.Var('vob_binding_days').GetValueWithDefault('(CFixedPoint)0')))]"
+on_start = "[GetScriptedGui('vob_step_2_3').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).End)]"
+        }
+    }
+
+    widget = {
+        name = "vob_unexpected_existing_draft"
+        size = { 1 1 }
+        alwaystransparent = yes
+        state = {
+            name = vob_run
+            trigger_when = "[And(And(And(GetVariableSystem.Exists('vob_armed'), And(And(IsInGame, And(GetPlayer.IsValid, And(Not(GetMetaPlayer.IsObserver), And(Not(GameIsMultiplayer), And(Not(IsPauseMenuShown), Not(IsGameOverScreenShown)))))), IsGamePaused)), And(TreatyDraft.IsValidDataContext, And(ObjectsEqual(TreatyDraft.GetLeftCountry.Self, GetPlayer.Self), And(ObjectsEqual(TreatyDraft.GetRightCountry.Self, GetPlayer.MakeScope.Var('vob_target').GetCountry.Self), Not(TreatyDraft.IsRenegotiation))))), And(EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_phase').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)2'), Not(And(And(IsDataModelEmpty(TreatyDraft.GetSelectedOffers), And(IsDataModelEmpty(TreatyDraft.GetSelectedDemands), IsDataModelEmpty(TreatyDraft.GetSelectedMutualAgreements))), And(Not(TreatyDraft.WillOweObligation(TreatyDraft.GetLeftCountry.Self)), And(Not(TreatyDraft.WillAskForObligation(TreatyDraft.GetLeftCountry.Self)), Not(TreatyDraft.WillCallInObligation(TreatyDraft.GetLeftCountry.Self))))))))]"
+            on_start = "[GetVariableSystem.Clear('vob_armed')]"
+on_start = "[GetScriptedGui('vob_unexpected_draft').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).End)]"
+on_start = "[GetVariableSystem.Set('vob_panel', 'yes')]"
+        }
+    }
+
+    widget = {
+        name = "vob_promise_native_obligation"
+        size = { 1 1 }
+        alwaystransparent = yes
+        state = {
+            name = vob_run
+            trigger_when = "[And(And(And(GetVariableSystem.Exists('vob_armed'), And(And(IsInGame, And(GetPlayer.IsValid, And(Not(GetMetaPlayer.IsObserver), And(Not(GameIsMultiplayer), And(Not(IsPauseMenuShown), Not(IsGameOverScreenShown)))))), IsGamePaused)), And(TreatyDraft.IsValidDataContext, And(ObjectsEqual(TreatyDraft.GetLeftCountry.Self, GetPlayer.Self), And(ObjectsEqual(TreatyDraft.GetRightCountry.Self, GetPlayer.MakeScope.Var('vob_target').GetCountry.Self), Not(TreatyDraft.IsRenegotiation))))), And(EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_phase').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)3'), And(Not(EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_mode').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)6')), And(TreatyDraft.CanOweObligation(TreatyDraft.GetLeftCountry.Self), Not(TreatyDraft.WillOweObligation(TreatyDraft.GetLeftCountry.Self))))))]"
+            on_start = "[TreatyDraft.ToggleOweObligation(TreatyDraft.GetLeftCountry.Self)]"
+on_start = "[GetScriptedGui('vob_step_3_4').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).End)]"
+        }
+    }
+
+    widget = {
+        name = "vob_obligation_already_toggled"
+        size = { 1 1 }
+        alwaystransparent = yes
+        state = {
+            name = vob_run
+            trigger_when = "[And(And(And(GetVariableSystem.Exists('vob_armed'), And(And(IsInGame, And(GetPlayer.IsValid, And(Not(GetMetaPlayer.IsObserver), And(Not(GameIsMultiplayer), And(Not(IsPauseMenuShown), Not(IsGameOverScreenShown)))))), IsGamePaused)), And(TreatyDraft.IsValidDataContext, And(ObjectsEqual(TreatyDraft.GetLeftCountry.Self, GetPlayer.Self), And(ObjectsEqual(TreatyDraft.GetRightCountry.Self, GetPlayer.MakeScope.Var('vob_target').GetCountry.Self), Not(TreatyDraft.IsRenegotiation))))), And(EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_phase').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)3'), And(Not(EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_mode').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)6')), TreatyDraft.WillOweObligation(TreatyDraft.GetLeftCountry.Self))))]"
+            on_start = "[GetScriptedGui('vob_step_3_4').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).End)]"
+        }
+    }
+
+    widget = {
+        name = "vob_money_only_no_obligation"
+        size = { 1 1 }
+        alwaystransparent = yes
+        state = {
+            name = vob_run
+            trigger_when = "[And(And(And(GetVariableSystem.Exists('vob_armed'), And(And(IsInGame, And(GetPlayer.IsValid, And(Not(GetMetaPlayer.IsObserver), And(Not(GameIsMultiplayer), And(Not(IsPauseMenuShown), Not(IsGameOverScreenShown)))))), IsGamePaused)), And(TreatyDraft.IsValidDataContext, And(ObjectsEqual(TreatyDraft.GetLeftCountry.Self, GetPlayer.Self), And(ObjectsEqual(TreatyDraft.GetRightCountry.Self, GetPlayer.MakeScope.Var('vob_target').GetCountry.Self), Not(TreatyDraft.IsRenegotiation))))), And(EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_phase').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)3'), EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_mode').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)6')))]"
+            on_start = "[GetScriptedGui('vob_step_3_4').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).End)]"
+        }
+    }
+
+    widget = {
+        name = "vob_skip_obligation_unavailable"
+        size = { 1 1 }
+        alwaystransparent = yes
+        state = {
+            name = vob_run
+            trigger_when = "[And(And(And(GetVariableSystem.Exists('vob_armed'), And(And(IsInGame, And(GetPlayer.IsValid, And(Not(GetMetaPlayer.IsObserver), And(Not(GameIsMultiplayer), And(Not(IsPauseMenuShown), Not(IsGameOverScreenShown)))))), IsGamePaused)), And(TreatyDraft.IsValidDataContext, And(ObjectsEqual(TreatyDraft.GetLeftCountry.Self, GetPlayer.Self), And(ObjectsEqual(TreatyDraft.GetRightCountry.Self, GetPlayer.MakeScope.Var('vob_target').GetCountry.Self), Not(TreatyDraft.IsRenegotiation))))), And(EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_phase').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)3'), And(Not(EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_mode').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)6')), And(Not(TreatyDraft.CanOweObligation(TreatyDraft.GetLeftCountry.Self)), Not(TreatyDraft.WillOweObligation(TreatyDraft.GetLeftCountry.Self))))))]"
+            on_start = "[GetScriptedGui('vob_skip_2').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).End)]"
+on_start = "[TreatyDraft.ResetAll]"
+on_start = "[InformationPanelBar.ClosePanel]"
+        }
+    }
+
+    widget = {
+        name = "vob_open_vanilla_money_input"
+        size = { 1 1 }
+        alwaystransparent = yes
+        state = {
+            name = vob_run
+            trigger_when = "[And(And(And(GetVariableSystem.Exists('vob_armed'), And(And(IsInGame, And(GetPlayer.IsValid, And(Not(GetMetaPlayer.IsObserver), And(Not(GameIsMultiplayer), And(Not(IsPauseMenuShown), Not(IsGameOverScreenShown)))))), IsGamePaused)), And(TreatyDraft.IsValidDataContext, And(ObjectsEqual(TreatyDraft.GetLeftCountry.Self, GetPlayer.Self), And(ObjectsEqual(TreatyDraft.GetRightCountry.Self, GetPlayer.MakeScope.Var('vob_target').GetCountry.Self), Not(TreatyDraft.IsRenegotiation))))), And(EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_phase').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)4'), And(GetArticleType('money_transfer').IsVisible(TreatyDraft.GetRightCountry.Self, TreatyDraft.GetLeftCountry.Self), GetArticleType('money_transfer').IsAvailable(TreatyDraft.GetRightCountry.Self, TreatyDraft.GetLeftCountry.Self))))]"
+            on_start = "[GetScriptedGui('vob_step_4_5').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).End)]"
+on_start = "[RightClickMenuManager.ToggleArticleTypeInput(TreatyDraft.Self, GetArticleType('money_transfer').Self, TreatyDraft.GetRightCountry.Self, PdxGuiWidget.AccessSelf, 'vob_money_input')]"
+        }
+    }
+
+    widget = {
+        name = "vob_skip_money_unavailable"
+        size = { 1 1 }
+        alwaystransparent = yes
+        state = {
+            name = vob_run
+            trigger_when = "[And(And(And(GetVariableSystem.Exists('vob_armed'), And(And(IsInGame, And(GetPlayer.IsValid, And(Not(GetMetaPlayer.IsObserver), And(Not(GameIsMultiplayer), And(Not(IsPauseMenuShown), Not(IsGameOverScreenShown)))))), IsGamePaused)), And(TreatyDraft.IsValidDataContext, And(ObjectsEqual(TreatyDraft.GetLeftCountry.Self, GetPlayer.Self), And(ObjectsEqual(TreatyDraft.GetRightCountry.Self, GetPlayer.MakeScope.Var('vob_target').GetCountry.Self), Not(TreatyDraft.IsRenegotiation))))), And(EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_phase').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)4'), Not(And(GetArticleType('money_transfer').IsVisible(TreatyDraft.GetRightCountry.Self, TreatyDraft.GetLeftCountry.Self), GetArticleType('money_transfer').IsAvailable(TreatyDraft.GetRightCountry.Self, TreatyDraft.GetLeftCountry.Self)))))]"
+            on_start = "[GetScriptedGui('vob_skip_3').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).End)]"
+on_start = "[TreatyDraft.ResetAll]"
+on_start = "[InformationPanelBar.ClosePanel]"
+        }
+    }
+
+    widget = {
+        name = "vob_preview_ready"
+        size = { 1 1 }
+        alwaystransparent = yes
+        state = {
+            name = vob_run
+            trigger_when = "[And(And(And(GetVariableSystem.Exists('vob_armed'), And(And(IsInGame, And(GetPlayer.IsValid, And(Not(GetMetaPlayer.IsObserver), And(Not(GameIsMultiplayer), And(Not(IsPauseMenuShown), Not(IsGameOverScreenShown)))))), IsGamePaused)), And(TreatyDraft.IsValidDataContext, And(ObjectsEqual(TreatyDraft.GetLeftCountry.Self, GetPlayer.Self), And(ObjectsEqual(TreatyDraft.GetRightCountry.Self, GetPlayer.MakeScope.Var('vob_target').GetCountry.Self), Not(TreatyDraft.IsRenegotiation))))), And(EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_phase').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)7'), And(EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_preview').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)1'), And(And(IsDataModelEmpty(TreatyDraft.GetSelectedOffers), And(IsDataModelEmpty(TreatyDraft.GetSelectedMutualAgreements), And(EqualTo_int32(GetDataModelSize(TreatyDraft.GetSelectedDemands), '(int32)1'), TreatyDraft.HasSelectedArticle(GetArticleType('money_transfer').Self, TreatyDraft.GetRightCountry.Self)))), And(And(Not(TreatyDraft.WillAskForObligation(TreatyDraft.GetLeftCountry.Self)), Not(TreatyDraft.WillCallInObligation(TreatyDraft.GetLeftCountry.Self))), And(EqualTo_int32(TreatyDraft.GetBindingDays, FixedPointToInt(GetPlayer.MakeScope.Var('vob_binding_days').GetValueWithDefault('(CFixedPoint)0'))), Or(And(Not(EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_mode').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)6')), TreatyDraft.WillOweObligation(TreatyDraft.GetLeftCountry.Self)), And(EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_mode').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)6'), Not(TreatyDraft.WillOweObligation(TreatyDraft.GetLeftCountry.Self))))))))))]"
+            on_start = "[GetVariableSystem.Clear('vob_armed')]"
+on_start = "[GetScriptedGui('vob_preview_done').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).End)]"
+on_start = "[GetVariableSystem.Clear('vob_panel')]"
+        }
+    }
+
+    widget = {
+        name = "vob_unexpected_content"
+        size = { 1 1 }
+        alwaystransparent = yes
+        state = {
+            name = vob_run
+            trigger_when = "[And(And(And(GetVariableSystem.Exists('vob_armed'), And(And(IsInGame, And(GetPlayer.IsValid, And(Not(GetMetaPlayer.IsObserver), And(Not(GameIsMultiplayer), And(Not(IsPauseMenuShown), Not(IsGameOverScreenShown)))))), IsGamePaused)), And(TreatyDraft.IsValidDataContext, And(ObjectsEqual(TreatyDraft.GetLeftCountry.Self, GetPlayer.Self), And(ObjectsEqual(TreatyDraft.GetRightCountry.Self, GetPlayer.MakeScope.Var('vob_target').GetCountry.Self), Not(TreatyDraft.IsRenegotiation))))), And(EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_phase').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)7'), Not(And(And(IsDataModelEmpty(TreatyDraft.GetSelectedOffers), And(IsDataModelEmpty(TreatyDraft.GetSelectedMutualAgreements), And(EqualTo_int32(GetDataModelSize(TreatyDraft.GetSelectedDemands), '(int32)1'), TreatyDraft.HasSelectedArticle(GetArticleType('money_transfer').Self, TreatyDraft.GetRightCountry.Self)))), And(And(Not(TreatyDraft.WillAskForObligation(TreatyDraft.GetLeftCountry.Self)), Not(TreatyDraft.WillCallInObligation(TreatyDraft.GetLeftCountry.Self))), And(EqualTo_int32(TreatyDraft.GetBindingDays, FixedPointToInt(GetPlayer.MakeScope.Var('vob_binding_days').GetValueWithDefault('(CFixedPoint)0'))), Or(And(Not(EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_mode').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)6')), TreatyDraft.WillOweObligation(TreatyDraft.GetLeftCountry.Self)), And(EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_mode').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)6'), Not(TreatyDraft.WillOweObligation(TreatyDraft.GetLeftCountry.Self))))))))))]"
+            on_start = "[GetVariableSystem.Clear('vob_armed')]"
+on_start = "[GetScriptedGui('vob_unexpected_draft').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).End)]"
+on_start = "[GetVariableSystem.Set('vob_panel', 'yes')]"
+        }
+    }
+
+    widget = {
+        name = "vob_skip_influence"
+        size = { 1 1 }
+        alwaystransparent = yes
+        state = {
+            name = vob_run
+            trigger_when = "[And(And(And(GetVariableSystem.Exists('vob_armed'), And(And(IsInGame, And(GetPlayer.IsValid, And(Not(GetMetaPlayer.IsObserver), And(Not(GameIsMultiplayer), And(Not(IsPauseMenuShown), Not(IsGameOverScreenShown)))))), IsGamePaused)), And(TreatyDraft.IsValidDataContext, And(ObjectsEqual(TreatyDraft.GetLeftCountry.Self, GetPlayer.Self), And(ObjectsEqual(TreatyDraft.GetRightCountry.Self, GetPlayer.MakeScope.Var('vob_target').GetCountry.Self), Not(TreatyDraft.IsRenegotiation))))), And(EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_phase').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)7'), And(Not(EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_preview').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)1')), And(And(And(IsDataModelEmpty(TreatyDraft.GetSelectedOffers), And(IsDataModelEmpty(TreatyDraft.GetSelectedMutualAgreements), And(EqualTo_int32(GetDataModelSize(TreatyDraft.GetSelectedDemands), '(int32)1'), TreatyDraft.HasSelectedArticle(GetArticleType('money_transfer').Self, TreatyDraft.GetRightCountry.Self)))), And(And(Not(TreatyDraft.WillAskForObligation(TreatyDraft.GetLeftCountry.Self)), Not(TreatyDraft.WillCallInObligation(TreatyDraft.GetLeftCountry.Self))), And(EqualTo_int32(TreatyDraft.GetBindingDays, FixedPointToInt(GetPlayer.MakeScope.Var('vob_binding_days').GetValueWithDefault('(CFixedPoint)0'))), Or(And(Not(EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_mode').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)6')), TreatyDraft.WillOweObligation(TreatyDraft.GetLeftCountry.Self)), And(EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_mode').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)6'), Not(TreatyDraft.WillOweObligation(TreatyDraft.GetLeftCountry.Self))))))), Not(GetScriptedGui('vob_affordable').IsValid(GuiScope.SetRoot(GetPlayer.MakeScope).AddScope('cost', MakeScopeValue(TreatyDraft.GetCost(GetPlayer.Self))).End))))))]"
+            on_start = "[GetScriptedGui('vob_skip_4').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).End)]"
+on_start = "[TreatyDraft.ResetAll]"
+on_start = "[InformationPanelBar.ClosePanel]"
+        }
+    }
+
+    widget = {
+        name = "vob_skip_invalid_proposal"
+        size = { 1 1 }
+        alwaystransparent = yes
+        state = {
+            name = vob_run
+            trigger_when = "[And(And(And(GetVariableSystem.Exists('vob_armed'), And(And(IsInGame, And(GetPlayer.IsValid, And(Not(GetMetaPlayer.IsObserver), And(Not(GameIsMultiplayer), And(Not(IsPauseMenuShown), Not(IsGameOverScreenShown)))))), IsGamePaused)), And(TreatyDraft.IsValidDataContext, And(ObjectsEqual(TreatyDraft.GetLeftCountry.Self, GetPlayer.Self), And(ObjectsEqual(TreatyDraft.GetRightCountry.Self, GetPlayer.MakeScope.Var('vob_target').GetCountry.Self), Not(TreatyDraft.IsRenegotiation))))), And(EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_phase').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)7'), And(Not(EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_preview').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)1')), And(And(And(IsDataModelEmpty(TreatyDraft.GetSelectedOffers), And(IsDataModelEmpty(TreatyDraft.GetSelectedMutualAgreements), And(EqualTo_int32(GetDataModelSize(TreatyDraft.GetSelectedDemands), '(int32)1'), TreatyDraft.HasSelectedArticle(GetArticleType('money_transfer').Self, TreatyDraft.GetRightCountry.Self)))), And(And(Not(TreatyDraft.WillAskForObligation(TreatyDraft.GetLeftCountry.Self)), Not(TreatyDraft.WillCallInObligation(TreatyDraft.GetLeftCountry.Self))), And(EqualTo_int32(TreatyDraft.GetBindingDays, FixedPointToInt(GetPlayer.MakeScope.Var('vob_binding_days').GetValueWithDefault('(CFixedPoint)0'))), Or(And(Not(EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_mode').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)6')), TreatyDraft.WillOweObligation(TreatyDraft.GetLeftCountry.Self)), And(EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_mode').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)6'), Not(TreatyDraft.WillOweObligation(TreatyDraft.GetLeftCountry.Self))))))), And(GetScriptedGui('vob_affordable').IsValid(GuiScope.SetRoot(GetPlayer.MakeScope).AddScope('cost', MakeScopeValue(TreatyDraft.GetCost(GetPlayer.Self))).End), Not(IsValid(TreatyDraft.SendProposal)))))))]"
+            on_start = "[GetScriptedGui('vob_skip_5').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).End)]"
+on_start = "[TreatyDraft.ResetAll]"
+on_start = "[InformationPanelBar.ClosePanel]"
+        }
+    }
+
+    widget = {
+        name = "vob_send_native_proposal"
+        size = { 1 1 }
+        alwaystransparent = yes
+        state = {
+            name = vob_run
+            trigger_when = "[And(And(And(GetVariableSystem.Exists('vob_armed'), And(And(IsInGame, And(GetPlayer.IsValid, And(Not(GetMetaPlayer.IsObserver), And(Not(GameIsMultiplayer), And(Not(IsPauseMenuShown), Not(IsGameOverScreenShown)))))), IsGamePaused)), And(TreatyDraft.IsValidDataContext, And(ObjectsEqual(TreatyDraft.GetLeftCountry.Self, GetPlayer.Self), And(ObjectsEqual(TreatyDraft.GetRightCountry.Self, GetPlayer.MakeScope.Var('vob_target').GetCountry.Self), Not(TreatyDraft.IsRenegotiation))))), And(EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_phase').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)7'), And(Not(EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_preview').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)1')), And(And(And(IsDataModelEmpty(TreatyDraft.GetSelectedOffers), And(IsDataModelEmpty(TreatyDraft.GetSelectedMutualAgreements), And(EqualTo_int32(GetDataModelSize(TreatyDraft.GetSelectedDemands), '(int32)1'), TreatyDraft.HasSelectedArticle(GetArticleType('money_transfer').Self, TreatyDraft.GetRightCountry.Self)))), And(And(Not(TreatyDraft.WillAskForObligation(TreatyDraft.GetLeftCountry.Self)), Not(TreatyDraft.WillCallInObligation(TreatyDraft.GetLeftCountry.Self))), And(EqualTo_int32(TreatyDraft.GetBindingDays, FixedPointToInt(GetPlayer.MakeScope.Var('vob_binding_days').GetValueWithDefault('(CFixedPoint)0'))), Or(And(Not(EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_mode').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)6')), TreatyDraft.WillOweObligation(TreatyDraft.GetLeftCountry.Self)), And(EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_mode').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)6'), Not(TreatyDraft.WillOweObligation(TreatyDraft.GetLeftCountry.Self))))))), And(GetScriptedGui('vob_affordable').IsValid(GuiScope.SetRoot(GetPlayer.MakeScope).AddScope('cost', MakeScopeValue(TreatyDraft.GetCost(GetPlayer.Self))).End), IsValid(TreatyDraft.SendProposal))))))]"
+            on_start = "[GetScriptedGui('vob_record_send').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).AddScope('cost', MakeScopeValue(TreatyDraft.GetCost(GetPlayer.Self))).End)]"
+on_start = "[Execute(TreatyDraft.SendProposal)]"
+on_start = "[TreatyDraft.ResetAll]"
+on_start = "[InformationPanelBar.ClosePanel]"
+        }
+    }
+}
+}

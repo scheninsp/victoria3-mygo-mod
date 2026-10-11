@@ -1,0 +1,122 @@
+﻿vob_initialize_options = {
+    if = {
+        limit = { NOT = { has_variable = vob_options_version } }
+        set_variable = { name = vob_options_version value = 14 }
+        set_variable = { name = vob_filter_letter value = 0 }
+        set_variable = { name = vob_filter_rank value = 0 }
+        set_variable = { name = vob_filter_excluded value = 0 }
+        set_variable = { name = vob_filter_interest value = 0 }
+        # Preserve the old regional result.
+        if = { limit = { has_variable = vob_mode }
+        if = {
+            limit = { var:vob_mode = 3 }
+            every_strategic_region = {
+                limit = { NOT = { this = root.capital.region } any_scope_state = { always = yes } }
+                root = { add_to_variable_list = { name = vob_included_regions target = prev } }
+            }
+        }
+        else_if = {
+            limit = { var:vob_mode = 4 }
+            vob_exclude_home_neighbours = yes
+        }
+        }
+    }
+    # Decision tooltip pre-evaluation does not apply preceding initialization writes.
+    if = { limit = { has_variable = vob_options_version }
+    if = {
+        limit = { var:vob_options_version < 15 }
+        # Keep both saved regional lists, but only activate the legacy mode's list.
+        set_variable = { name = vob_trade_type value = 1 }
+        if = { limit = { var:vob_mode = 6 } set_variable = { name = vob_trade_type value = 6 } }
+        set_variable = { name = vob_include_active value = 0 }
+        set_variable = { name = vob_exclude_active value = 0 }
+        set_variable = { name = vob_view_all value = 0 }
+        if = { limit = { var:vob_mode = 3 } set_variable = { name = vob_include_active value = 1 } }
+        if = { limit = { var:vob_mode = 4 } set_variable = { name = vob_exclude_active value = 1 } }
+        if = { limit = { var:vob_mode = 5 } set_variable = { name = vob_filter_interest value = 2 } }
+        set_variable = { name = vob_options_version value = 15 }
+        # Declare retired variable names for the engine validator, then discard.
+        set_variable = { name = vob_budget value = 0 }
+        set_variable = { name = vob_budget_limit value = 0 }
+        set_variable = { name = vob_budget_edit value = 0 }
+        set_variable = { name = vob_cooldown_2 value = 0 }
+    }
+    }
+    remove_variable = vob_budget
+    remove_variable = vob_budget_limit
+    remove_variable = vob_budget_edit
+    remove_variable = vob_cooldown_2
+    # Discard retired cooldown variables, including those from older saves.
+    # Zero assignments only declare the names for the engine validator.
+    set_variable = { name = vob_cooldown_1 value = 0 }
+    remove_variable = vob_cooldown_1
+    set_variable = { name = vob_cooldown_2 value = 0 }
+    remove_variable = vob_cooldown_2
+    set_variable = { name = vob_cooldown_3 value = 0 }
+    remove_variable = vob_cooldown_3
+    set_variable = { name = vob_cooldown_4 value = 0 }
+    remove_variable = vob_cooldown_4
+    set_variable = { name = vob_cooldown_5 value = 0 }
+    remove_variable = vob_cooldown_5
+    set_variable = { name = vob_cooldown_6 value = 0 }
+    remove_variable = vob_cooldown_6
+    set_variable = { name = vob_options_version value = 100 }
+
+    if = { limit = { NOT = { has_variable = vob_initial_language } }
+        set_variable = { name = vob_initial_language value = 1 }
+    }
+    if = { limit = { NOT = { has_variable = vob_ui_language } }
+        set_variable = { name = vob_ui_language value = 0 }
+    }
+
+    clear_variable_list = vob_regions
+    every_strategic_region = {
+        limit = { any_scope_state = { always = yes } }
+        root = { add_to_variable_list = { name = vob_regions target = prev } }
+    }
+    vob_refresh_all = yes
+}
+vob_refresh_country_view = {
+    if = { limit = { has_variable = vob_filter_excluded has_variable = vob_filter_interest has_variable = vob_filter_rank has_variable = vob_filter_letter has_variable = vob_include_active has_variable = vob_exclude_active has_variable = vob_initial_language }
+    clear_variable_list = vob_visible_countries
+    clear_variable_list = vob_browsable_countries
+    clear_variable_list = vob_all_excluded
+    every_country = {
+        limit = { vob_filter_matches = yes }
+        root = { add_to_variable_list = { name = vob_visible_countries target = prev } }
+        if = { limit = { vob_country_excluded = no }
+            root = { add_to_variable_list = { name = vob_browsable_countries target = prev } }
+        }
+    }
+    every_country = {
+        limit = { NOT = { this = root } exists = capital vob_country_excluded = yes }
+        root = { add_to_variable_list = { name = vob_all_excluded target = prev } }
+    }
+    }
+}
+vob_exclude_home_neighbours = {
+    clear_variable_list = vob_excluded_regions
+    add_to_variable_list = { name = vob_excluded_regions target = capital.region }
+    every_strategic_region = {
+        limit = {
+            NOT = { this = root.capital.region }
+            any_scope_state = { any_neighbouring_state = { region = root.capital.region } }
+        }
+        root = { add_to_variable_list = { name = vob_excluded_regions target = prev } }
+    }
+}
+vob_update_mode = {
+    # Preserve legacy mode values for the native worker; filters are independent.
+    if = { limit = { var:vob_trade_type = 6 } set_variable = { name = vob_mode value = 6 } }
+    else_if = { limit = { var:vob_include_active = 1 } set_variable = { name = vob_mode value = 3 } }
+    else_if = { limit = { var:vob_exclude_active = 1 } set_variable = { name = vob_mode value = 4 } }
+    else_if = { limit = { var:vob_filter_interest = 2 } set_variable = { name = vob_mode value = 5 } }
+    else = { set_variable = { name = vob_mode value = 1 } }
+}
+vob_refresh_all = {
+    if = { limit = { has_variable = vob_trade_type }
+        vob_update_mode = yes
+        vob_refresh_country_view = yes
+        vob_refresh_candidates = yes
+    }
+}

@@ -1,0 +1,140 @@
+# Only generic country variables/lists are written by these effects.
+# No treaties, obligations, modifiers, journals, technologies or money are created here.
+vob_initialize = {
+    # This is a monotonically increasing UI request number, not a boolean.
+    # The GUI acknowledges it locally so reopening does not depend on SGUI
+    # execution working. Preserve the old 0.1.1 value when upgrading a save.
+    if = {
+        limit = { NOT = { has_variable = vob_open_requested } }
+        set_variable = { name = vob_open_requested value = 0 }
+    }
+    set_variable = { name = vob_ui_ready value = 0 }
+    set_variable = { name = vob_ui_reply value = 0 }
+    if = {
+        limit = { NOT = { has_variable = vob_initialized } }
+        set_variable = { name = vob_initialized value = 1 }
+        set_variable = { name = vob_mode value = 1 }
+        set_variable = { name = vob_binding_days value = 9125 }
+        set_variable = { name = vob_binding_years value = 25 }
+        set_variable = { name = vob_sent value = 0 }
+        set_variable = { name = vob_skipped value = 0 }
+        set_variable = { name = vob_total value = 0 }
+        set_variable = { name = vob_report value = 0 }
+    }
+    # Opening the tool explicitly abandons any saved, interrupted queue.
+    set_variable = { name = vob_phase value = 0 }
+    remove_variable = vob_target
+    remove_variable = vob_preview
+    clear_variable_list = vob_queue
+    clear_variable_list = vob_countries
+    every_country = {
+        limit = { NOT = { this = root } exists = capital }
+        root = { add_to_variable_list = { name = vob_countries target = prev } }
+    }
+    vob_initialize_options = yes
+    vob_refresh_candidates = yes
+}
+vob_refresh_candidates = {
+    # During decision tooltip evaluation the preceding writes are not applied.
+    # Only read mode and build lists after actual initialization.
+    if = {
+    limit = { has_variable = vob_mode has_variable = vob_trade_type has_variable = vob_include_active has_variable = vob_exclude_active has_variable = vob_initial_language }
+    clear_variable_list = vob_candidates
+    every_country = {
+        limit = { vob_eligible = yes }
+        root = { add_to_variable_list = { name = vob_candidates target = prev } }
+    }
+    }
+}
+vob_start_batch = {
+    vob_refresh_candidates = yes
+    clear_variable_list = vob_queue
+    set_variable = { name = vob_sent value = 0 }
+    set_variable = { name = vob_skipped value = 0 }
+    set_variable = { name = vob_total value = 0 }
+    set_variable = { name = vob_report value = 1 }
+    every_in_list = {
+        variable = vob_candidates
+        root = {
+            add_to_variable_list = { name = vob_queue target = prev }
+            change_variable = { name = vob_total add = 1 }
+        }
+    }
+    vob_pick_next = yes
+}
+vob_pick_next = {
+    remove_variable = vob_target
+    if = {
+        limit = { any_in_list = { variable = vob_queue exists = yes } }
+        random_country = {
+            limit = {
+                root = {
+                    is_target_in_variable_list = { name = vob_queue target = prev }
+                }
+            }
+            root = { set_variable = { name = vob_target value = prev } }
+        }
+        remove_list_variable = { name = vob_queue target = var:vob_target }
+        set_variable = { name = vob_phase value = 1 }
+    }
+    else = {
+        set_variable = { name = vob_phase value = 0 }
+        set_variable = { name = vob_report value = 2 }
+    }
+}
+vob_skip_target = {
+    change_variable = { name = vob_skipped add = 1 }
+    set_variable = { name = vob_phase value = 8 }
+}
+vob_cleanup = {
+    remove_variable = vob_initialized
+    remove_variable = vob_mode
+    remove_variable = vob_binding_days
+    remove_variable = vob_binding_years
+    remove_variable = vob_phase
+    remove_variable = vob_target
+    remove_variable = vob_preview
+    remove_variable = vob_sent
+    remove_variable = vob_skipped
+    remove_variable = vob_total
+    remove_variable = vob_budget
+    remove_variable = vob_report
+    remove_variable = vob_open_requested
+    remove_variable = vob_ui_ready
+    remove_variable = vob_ui_reply
+    remove_variable = vob_cooldown_1
+    remove_variable = vob_cooldown_2
+    remove_variable = vob_cooldown_3
+    remove_variable = vob_cooldown_4
+    remove_variable = vob_cooldown_5
+    remove_variable = vob_cooldown_6
+    remove_variable = vob_skip_1
+    remove_variable = vob_skip_2
+    remove_variable = vob_skip_3
+    remove_variable = vob_skip_4
+    remove_variable = vob_skip_5
+    remove_variable = vob_options_version
+    remove_variable = vob_initial_language
+    remove_variable = vob_ui_language
+    remove_variable = vob_budget_limit
+    remove_variable = vob_budget_edit
+    remove_variable = vob_filter_letter
+    remove_variable = vob_filter_rank
+    remove_variable = vob_filter_excluded
+    remove_variable = vob_filter_interest
+    remove_variable = vob_filter_region
+    remove_variable = vob_trade_type
+    remove_variable = vob_include_active
+    remove_variable = vob_exclude_active
+    remove_variable = vob_view_all
+    clear_variable_list = vob_excluded
+    clear_variable_list = vob_queue
+    clear_variable_list = vob_countries
+    clear_variable_list = vob_candidates
+    clear_variable_list = vob_regions
+    clear_variable_list = vob_included_regions
+    clear_variable_list = vob_excluded_regions
+    clear_variable_list = vob_visible_countries
+    clear_variable_list = vob_browsable_countries
+    clear_variable_list = vob_all_excluded
+}

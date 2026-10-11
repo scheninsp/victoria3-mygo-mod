@@ -1,0 +1,739 @@
+﻿vob_consume_ui_request = {
+    scope = country
+    ai_is_valid = { always = no }
+    is_shown = { is_player = yes }
+    saved_scopes = { language }
+    is_valid = { is_player = yes has_variable = vob_open_requested OR = { scope:language = 1 scope:language = 2 } }
+    effect = { if = { limit = { is_player = yes has_variable = vob_open_requested OR = { scope:language = 1 scope:language = 2 } }
+
+# Real game-language changes select that language's default index. First use
+# in Chinese preserves a migrated 0.1.7 manual English-index preference.
+if = { limit = { has_variable = vob_ui_language has_variable = vob_initial_language }
+    if = { limit = { NOT = { var:vob_ui_language = 0 } NOT = { var:vob_ui_language = scope:language } }
+        if = { limit = { NOT = { var:vob_initial_language = scope:language } }
+            set_variable = { name = vob_initial_language value = scope:language }
+            set_variable = { name = vob_filter_letter value = 0 }
+        }
+    }
+    if = { limit = { scope:language = 2 NOT = { var:vob_initial_language = 2 } }
+        set_variable = { name = vob_initial_language value = 2 }
+        set_variable = { name = vob_filter_letter value = 0 }
+    }
+    set_variable = { name = vob_ui_language value = scope:language }
+    vob_refresh_all = yes
+}
+
+set_variable = { name = vob_ui_ready value = 1 }
+    } }
+}
+
+vob_refresh = {
+    scope = country
+    ai_is_valid = { always = no }
+    is_shown = { is_player = yes }
+    is_valid = { is_player = yes var:vob_phase = 0 }
+    effect = { if = { limit = { is_player = yes var:vob_phase = 0 }
+vob_refresh_all = yes
+change_variable = { name = vob_ui_reply add = 1 }
+    } }
+}
+
+vob_set_duration = {
+    scope = country
+    ai_is_valid = { always = no }
+    is_shown = { is_player = yes }
+    saved_scopes = { years }
+    is_valid = { is_player = yes var:vob_phase = 0 OR = { scope:years = 5 scope:years = 10 scope:years = 15 scope:years = 25 scope:years = 50 scope:years = 99 } }
+    effect = { if = { limit = { is_player = yes var:vob_phase = 0 OR = { scope:years = 5 scope:years = 10 scope:years = 15 scope:years = 25 scope:years = 50 scope:years = 99 } }
+set_variable = { name = vob_binding_years value = scope:years }
+set_variable = { name = vob_binding_days value = { value = scope:years multiply = 365 } }
+change_variable = { name = vob_ui_reply add = 1 }
+    } }
+}
+
+vob_excluded = {
+    scope = country
+    ai_is_valid = { always = no }
+    is_shown = { is_player = yes }
+    saved_scopes = { target }
+    is_valid = { is_player = yes is_target_in_variable_list = { name = vob_excluded target = scope:target } }
+}
+
+vob_toggle_exclusion = {
+    scope = country
+    ai_is_valid = { always = no }
+    is_shown = { is_player = yes }
+    saved_scopes = { target }
+    is_valid = { is_player = yes var:vob_phase = 0 exists = scope:target NOT = { scope:target = root } }
+    effect = { if = { limit = { is_player = yes var:vob_phase = 0 exists = scope:target NOT = { scope:target = root } }
+
+if = {
+    limit = { is_target_in_variable_list = { name = vob_excluded target = scope:target } }
+    remove_list_variable = { name = vob_excluded target = scope:target }
+}
+else = { add_to_variable_list = { name = vob_excluded target = scope:target } }
+vob_refresh_all = yes
+
+change_variable = { name = vob_ui_reply add = 1 }
+    } }
+}
+
+vob_clear_exclusions = {
+    scope = country
+    ai_is_valid = { always = no }
+    is_shown = { is_player = yes }
+    is_valid = { is_player = yes var:vob_phase = 0 }
+    effect = { if = { limit = { is_player = yes var:vob_phase = 0 }
+clear_variable_list = vob_excluded
+vob_refresh_all = yes
+change_variable = { name = vob_ui_reply add = 1 }
+    } }
+}
+
+vob_initial_language = {
+    scope = country
+    ai_is_valid = { always = no }
+    is_shown = { is_player = yes }
+    saved_scopes = { choice }
+    is_valid = { is_player = yes var:vob_phase = 0 has_variable = vob_initial_language has_variable = vob_ui_language var:vob_ui_language = 1 OR = { scope:choice = 1 scope:choice = 2 } }
+    effect = { if = { limit = { is_player = yes var:vob_phase = 0 has_variable = vob_initial_language has_variable = vob_ui_language var:vob_ui_language = 1 OR = { scope:choice = 1 scope:choice = 2 } }
+
+if = {
+    limit = { NOT = { var:vob_initial_language = scope:choice } }
+    set_variable = { name = vob_initial_language value = scope:choice }
+    set_variable = { name = vob_filter_letter value = 0 }
+}
+
+vob_refresh_all = yes
+change_variable = { name = vob_ui_reply add = 1 }
+    } }
+}
+
+vob_trade_type = {
+    scope = country
+    ai_is_valid = { always = no }
+    is_shown = { is_player = yes }
+    saved_scopes = { choice }
+    is_valid = { is_player = yes var:vob_phase = 0 OR = { scope:choice = 1 scope:choice = 6 } }
+    effect = { if = { limit = { is_player = yes var:vob_phase = 0 OR = { scope:choice = 1 scope:choice = 6 } }
+set_variable = { name = vob_trade_type value = scope:choice }
+vob_refresh_all = yes
+change_variable = { name = vob_ui_reply add = 1 }
+    } }
+}
+
+vob_view_all = {
+    scope = country
+    ai_is_valid = { always = no }
+    is_shown = { is_player = yes }
+    saved_scopes = { choice }
+    is_valid = { is_player = yes var:vob_phase = 0 scope:choice >= 0 scope:choice <= 1 }
+    effect = { if = { limit = { is_player = yes var:vob_phase = 0 scope:choice >= 0 scope:choice <= 1 }
+set_variable = { name = vob_view_all value = scope:choice }
+change_variable = { name = vob_ui_reply add = 1 }
+    } }
+}
+
+vob_candidate = {
+    scope = country
+    ai_is_valid = { always = no }
+    is_shown = { is_player = yes }
+    saved_scopes = { target }
+    is_valid = { is_player = yes scope:target = { vob_eligible = yes } }
+}
+
+vob_region_excluded = {
+    scope = country
+    ai_is_valid = { always = no }
+    is_shown = { is_player = yes }
+    saved_scopes = { target }
+    is_valid = { is_player = yes scope:target = { vob_region_excluded = yes } }
+}
+
+vob_filter_letter = {
+    scope = country
+    ai_is_valid = { always = no }
+    is_shown = { is_player = yes }
+    saved_scopes = { choice }
+    is_valid = { is_player = yes var:vob_phase = 0 scope:choice >= 0 scope:choice <= 27 }
+    effect = { if = { limit = { is_player = yes var:vob_phase = 0 scope:choice >= 0 scope:choice <= 27 }
+set_variable = { name = vob_filter_letter value = scope:choice }
+vob_refresh_all = yes
+change_variable = { name = vob_ui_reply add = 1 }
+    } }
+}
+
+vob_filter_rank = {
+    scope = country
+    ai_is_valid = { always = no }
+    is_shown = { is_player = yes }
+    saved_scopes = { choice }
+    is_valid = { is_player = yes var:vob_phase = 0 scope:choice >= 0 scope:choice <= 8 }
+    effect = { if = { limit = { is_player = yes var:vob_phase = 0 scope:choice >= 0 scope:choice <= 8 }
+set_variable = { name = vob_filter_rank value = scope:choice }
+vob_refresh_all = yes
+change_variable = { name = vob_ui_reply add = 1 }
+    } }
+}
+
+vob_filter_excluded = {
+    scope = country
+    ai_is_valid = { always = no }
+    is_shown = { is_player = yes }
+    saved_scopes = { choice }
+    is_valid = { is_player = yes var:vob_phase = 0 scope:choice >= 0 scope:choice <= 1 }
+    effect = { if = { limit = { is_player = yes var:vob_phase = 0 scope:choice >= 0 scope:choice <= 1 }
+set_variable = { name = vob_filter_excluded value = scope:choice }
+vob_refresh_all = yes
+change_variable = { name = vob_ui_reply add = 1 }
+    } }
+}
+
+vob_filter_interest = {
+    scope = country
+    ai_is_valid = { always = no }
+    is_shown = { is_player = yes }
+    saved_scopes = { choice }
+    is_valid = { is_player = yes var:vob_phase = 0 scope:choice >= 0 scope:choice <= 2 }
+    effect = { if = { limit = { is_player = yes var:vob_phase = 0 scope:choice >= 0 scope:choice <= 2 }
+set_variable = { name = vob_filter_interest value = scope:choice }
+vob_refresh_all = yes
+change_variable = { name = vob_ui_reply add = 1 }
+    } }
+}
+
+vob_filter_region = {
+    scope = country
+    ai_is_valid = { always = no }
+    is_shown = { is_player = yes }
+    saved_scopes = { region }
+    is_valid = { is_player = yes var:vob_phase = 0 exists = scope:region }
+    effect = { if = { limit = { is_player = yes var:vob_phase = 0 exists = scope:region }
+set_variable = { name = vob_filter_region value = scope:region }
+vob_refresh_all = yes
+change_variable = { name = vob_ui_reply add = 1 }
+    } }
+}
+
+vob_filter_region_all = {
+    scope = country
+    ai_is_valid = { always = no }
+    is_shown = { is_player = yes }
+    is_valid = { is_player = yes var:vob_phase = 0 }
+    effect = { if = { limit = { is_player = yes var:vob_phase = 0 }
+remove_variable = vob_filter_region
+vob_refresh_all = yes
+change_variable = { name = vob_ui_reply add = 1 }
+    } }
+}
+
+vob_filter_region_active = {
+    scope = country
+    ai_is_valid = { always = no }
+    is_shown = { is_player = yes }
+    is_valid = { is_player = yes has_variable = vob_filter_region }
+}
+
+vob_filter_reset = {
+    scope = country
+    ai_is_valid = { always = no }
+    is_shown = { is_player = yes }
+    is_valid = { is_player = yes var:vob_phase = 0 }
+    effect = { if = { limit = { is_player = yes var:vob_phase = 0 }
+set_variable = { name = vob_filter_letter value = 0 }
+set_variable = { name = vob_filter_rank value = 0 }
+set_variable = { name = vob_filter_excluded value = 0 }
+set_variable = { name = vob_filter_interest value = 0 }
+remove_variable = vob_filter_region
+clear_variable_list = vob_included_regions
+clear_variable_list = vob_excluded_regions
+set_variable = { name = vob_include_active value = 0 }
+set_variable = { name = vob_exclude_active value = 0 }
+vob_refresh_all = yes
+change_variable = { name = vob_ui_reply add = 1 }
+    } }
+}
+
+vob_restore_all = {
+    scope = country
+    ai_is_valid = { always = no }
+    is_shown = { is_player = yes }
+    is_valid = { is_player = yes var:vob_phase = 0 }
+    effect = { if = { limit = { is_player = yes var:vob_phase = 0 }
+clear_variable_list = vob_excluded
+clear_variable_list = vob_excluded_regions
+set_variable = { name = vob_exclude_active value = 0 }
+vob_refresh_all = yes
+change_variable = { name = vob_ui_reply add = 1 }
+    } }
+}
+
+vob_exclude_selected = {
+    scope = country
+    ai_is_valid = { always = no }
+    is_shown = { is_player = yes }
+    is_valid = { is_player = yes var:vob_phase = 0 }
+    effect = { if = { limit = { is_player = yes var:vob_phase = 0 }
+every_in_list = { variable = vob_candidates root = { add_to_variable_list = { name = vob_excluded target = prev } } }
+vob_refresh_all = yes
+change_variable = { name = vob_ui_reply add = 1 }
+    } }
+}
+
+vob_exclude_visible = {
+    scope = country
+    ai_is_valid = { always = no }
+    is_shown = { is_player = yes }
+    is_valid = { is_player = yes var:vob_phase = 0 }
+    effect = { if = { limit = { is_player = yes var:vob_phase = 0 }
+every_in_list = { variable = vob_visible_countries save_scope_as = vob_view_country root = { if = { limit = { NOT = { is_target_in_variable_list = { name = vob_excluded target = scope:vob_view_country } } } add_to_variable_list = { name = vob_excluded target = scope:vob_view_country } } } }
+vob_refresh_all = yes
+change_variable = { name = vob_ui_reply add = 1 }
+    } }
+}
+
+vob_allow_visible = {
+    scope = country
+    ai_is_valid = { always = no }
+    is_shown = { is_player = yes }
+    is_valid = { is_player = yes var:vob_phase = 0 }
+    effect = { if = { limit = { is_player = yes var:vob_phase = 0 }
+every_in_list = { variable = vob_visible_countries save_scope_as = vob_view_country root = { remove_list_variable = { name = vob_excluded target = scope:vob_view_country } } }
+vob_refresh_all = yes
+change_variable = { name = vob_ui_reply add = 1 }
+    } }
+}
+
+vob_include_region_selected = {
+    scope = country
+    ai_is_valid = { always = no }
+    is_shown = { is_player = yes }
+    saved_scopes = { region }
+    is_valid = { is_player = yes is_target_in_variable_list = { name = vob_included_regions target = scope:region } }
+}
+
+vob_toggle_include_region = {
+    scope = country
+    ai_is_valid = { always = no }
+    is_shown = { is_player = yes }
+    saved_scopes = { region }
+    is_valid = { is_player = yes var:vob_phase = 0 exists = scope:region }
+    effect = { if = { limit = { is_player = yes var:vob_phase = 0 exists = scope:region }
+if = { limit = { is_target_in_variable_list = { name = vob_included_regions target = scope:region } } remove_list_variable = { name = vob_included_regions target = scope:region } } else = { add_to_variable_list = { name = vob_included_regions target = scope:region } remove_list_variable = { name = vob_excluded_regions target = scope:region } }
+set_variable = { name = vob_include_active value = 1 }
+if = { limit = { NOT = { any_in_list = { variable = vob_included_regions always = yes } } } set_variable = { name = vob_include_active value = 0 } }
+if = { limit = { NOT = { any_in_list = { variable = vob_excluded_regions always = yes } } } set_variable = { name = vob_exclude_active value = 0 } }
+vob_refresh_all = yes
+change_variable = { name = vob_ui_reply add = 1 }
+    } }
+}
+
+vob_disable_include_regions = {
+    scope = country
+    ai_is_valid = { always = no }
+    is_shown = { is_player = yes }
+    is_valid = { is_player = yes var:vob_phase = 0 }
+    effect = { if = { limit = { is_player = yes var:vob_phase = 0 }
+set_variable = { name = vob_include_active value = 0 }
+vob_refresh_all = yes
+change_variable = { name = vob_ui_reply add = 1 }
+    } }
+}
+
+vob_clear_include_regions = {
+    scope = country
+    ai_is_valid = { always = no }
+    is_shown = { is_player = yes }
+    is_valid = { is_player = yes var:vob_phase = 0 }
+    effect = { if = { limit = { is_player = yes var:vob_phase = 0 }
+clear_variable_list = vob_included_regions
+set_variable = { name = vob_include_active value = 0 }
+vob_refresh_all = yes
+change_variable = { name = vob_ui_reply add = 1 }
+    } }
+}
+
+vob_enable_include_regions = {
+    scope = country
+    ai_is_valid = { always = no }
+    is_shown = { is_player = yes }
+    is_valid = { is_player = yes var:vob_phase = 0 }
+    effect = { if = { limit = { is_player = yes var:vob_phase = 0 }
+if = { limit = { var:vob_include_active = 1 } set_variable = { name = vob_include_active value = 0 } } else = { set_variable = { name = vob_include_active value = 1 } }
+vob_refresh_all = yes
+change_variable = { name = vob_ui_reply add = 1 }
+    } }
+}
+
+vob_all_include_regions = {
+    scope = country
+    ai_is_valid = { always = no }
+    is_shown = { is_player = yes }
+    is_valid = { is_player = yes var:vob_phase = 0 }
+    effect = { if = { limit = { is_player = yes var:vob_phase = 0 }
+clear_variable_list = vob_included_regions
+every_in_list = { variable = vob_regions root = { add_to_variable_list = { name = vob_included_regions target = prev } } }
+clear_variable_list = vob_excluded_regions
+set_variable = { name = vob_include_active value = 1 }
+set_variable = { name = vob_exclude_active value = 0 }
+vob_refresh_all = yes
+change_variable = { name = vob_ui_reply add = 1 }
+    } }
+}
+
+vob_exclude_region_selected = {
+    scope = country
+    ai_is_valid = { always = no }
+    is_shown = { is_player = yes }
+    saved_scopes = { region }
+    is_valid = { is_player = yes is_target_in_variable_list = { name = vob_excluded_regions target = scope:region } }
+}
+
+vob_toggle_exclude_region = {
+    scope = country
+    ai_is_valid = { always = no }
+    is_shown = { is_player = yes }
+    saved_scopes = { region }
+    is_valid = { is_player = yes var:vob_phase = 0 exists = scope:region }
+    effect = { if = { limit = { is_player = yes var:vob_phase = 0 exists = scope:region }
+if = { limit = { is_target_in_variable_list = { name = vob_excluded_regions target = scope:region } } remove_list_variable = { name = vob_excluded_regions target = scope:region } } else = { add_to_variable_list = { name = vob_excluded_regions target = scope:region } remove_list_variable = { name = vob_included_regions target = scope:region } }
+set_variable = { name = vob_exclude_active value = 1 }
+if = { limit = { NOT = { any_in_list = { variable = vob_excluded_regions always = yes } } } set_variable = { name = vob_exclude_active value = 0 } }
+if = { limit = { NOT = { any_in_list = { variable = vob_included_regions always = yes } } } set_variable = { name = vob_include_active value = 0 } }
+vob_refresh_all = yes
+change_variable = { name = vob_ui_reply add = 1 }
+    } }
+}
+
+vob_disable_exclude_regions = {
+    scope = country
+    ai_is_valid = { always = no }
+    is_shown = { is_player = yes }
+    is_valid = { is_player = yes var:vob_phase = 0 }
+    effect = { if = { limit = { is_player = yes var:vob_phase = 0 }
+set_variable = { name = vob_exclude_active value = 0 }
+vob_refresh_all = yes
+change_variable = { name = vob_ui_reply add = 1 }
+    } }
+}
+
+vob_clear_exclude_regions = {
+    scope = country
+    ai_is_valid = { always = no }
+    is_shown = { is_player = yes }
+    is_valid = { is_player = yes var:vob_phase = 0 }
+    effect = { if = { limit = { is_player = yes var:vob_phase = 0 }
+clear_variable_list = vob_excluded_regions
+set_variable = { name = vob_exclude_active value = 0 }
+vob_refresh_all = yes
+change_variable = { name = vob_ui_reply add = 1 }
+    } }
+}
+
+vob_enable_exclude_regions = {
+    scope = country
+    ai_is_valid = { always = no }
+    is_shown = { is_player = yes }
+    is_valid = { is_player = yes var:vob_phase = 0 }
+    effect = { if = { limit = { is_player = yes var:vob_phase = 0 }
+if = { limit = { var:vob_exclude_active = 1 } set_variable = { name = vob_exclude_active value = 0 } } else = { set_variable = { name = vob_exclude_active value = 1 } }
+vob_refresh_all = yes
+change_variable = { name = vob_ui_reply add = 1 }
+    } }
+}
+
+vob_all_exclude_regions = {
+    scope = country
+    ai_is_valid = { always = no }
+    is_shown = { is_player = yes }
+    is_valid = { is_player = yes var:vob_phase = 0 }
+    effect = { if = { limit = { is_player = yes var:vob_phase = 0 }
+clear_variable_list = vob_excluded_regions
+every_in_list = { variable = vob_regions root = { add_to_variable_list = { name = vob_excluded_regions target = prev } } }
+clear_variable_list = vob_included_regions
+set_variable = { name = vob_exclude_active value = 1 }
+set_variable = { name = vob_include_active value = 0 }
+vob_refresh_all = yes
+change_variable = { name = vob_ui_reply add = 1 }
+    } }
+}
+
+vob_preset_home = {
+    scope = country
+    ai_is_valid = { always = no }
+    is_shown = { is_player = yes }
+    is_valid = { is_player = yes var:vob_phase = 0 }
+    effect = { if = { limit = { is_player = yes var:vob_phase = 0 }
+clear_variable_list = vob_excluded_regions
+add_to_variable_list = { name = vob_excluded_regions target = capital.region }
+set_variable = { name = vob_exclude_active value = 1 }
+vob_refresh_all = yes
+change_variable = { name = vob_ui_reply add = 1 }
+    } }
+}
+
+vob_preset_neighbours = {
+    scope = country
+    ai_is_valid = { always = no }
+    is_shown = { is_player = yes }
+    is_valid = { is_player = yes var:vob_phase = 0 }
+    effect = { if = { limit = { is_player = yes var:vob_phase = 0 }
+vob_exclude_home_neighbours = yes
+set_variable = { name = vob_exclude_active value = 1 }
+vob_refresh_all = yes
+change_variable = { name = vob_ui_reply add = 1 }
+    } }
+}
+
+vob_start = {
+    scope = country
+    ai_is_valid = { always = no }
+    is_shown = { is_player = yes }
+    is_valid = { is_player = yes var:vob_phase = 0 }
+    effect = { if = { limit = { is_player = yes var:vob_phase = 0 }
+remove_variable = vob_preview
+set_variable = { name = vob_skip_1 value = 0 }
+set_variable = { name = vob_skip_2 value = 0 }
+set_variable = { name = vob_skip_3 value = 0 }
+set_variable = { name = vob_skip_4 value = 0 }
+set_variable = { name = vob_skip_5 value = 0 }
+vob_start_batch = yes
+change_variable = { name = vob_ui_reply add = 1 }
+    } }
+}
+
+vob_preview = {
+    scope = country
+    ai_is_valid = { always = no }
+    is_shown = { is_player = yes }
+    is_valid = { is_player = yes var:vob_phase = 0 }
+    effect = { if = { limit = { is_player = yes var:vob_phase = 0 }
+set_variable = { name = vob_preview value = 1 }
+set_variable = { name = vob_skip_1 value = 0 }
+set_variable = { name = vob_skip_2 value = 0 }
+set_variable = { name = vob_skip_3 value = 0 }
+set_variable = { name = vob_skip_4 value = 0 }
+set_variable = { name = vob_skip_5 value = 0 }
+vob_start_batch = yes
+change_variable = { name = vob_ui_reply add = 1 }
+    } }
+}
+
+vob_stop = {
+    scope = country
+    ai_is_valid = { always = no }
+    is_shown = { is_player = yes }
+    is_valid = { is_player = yes  }
+    effect = { if = { limit = { is_player = yes  }
+set_variable = { name = vob_phase value = 0 }
+set_variable = { name = vob_report value = 3 }
+clear_variable_list = vob_queue
+remove_variable = vob_preview
+    } }
+}
+
+vob_cleanup = {
+    scope = country
+    ai_is_valid = { always = no }
+    is_shown = { is_player = yes }
+    is_valid = { is_player = yes var:vob_phase = 0 }
+    effect = { if = { limit = { is_player = yes var:vob_phase = 0 }
+vob_cleanup = yes
+    } }
+}
+
+vob_step_1_2 = {
+    scope = country
+    ai_is_valid = { always = no }
+    is_shown = { is_player = yes }
+    is_valid = { is_player = yes var:vob_phase = 1 }
+    effect = { if = { limit = { is_player = yes var:vob_phase = 1 }
+set_variable = { name = vob_phase value = 2 }
+    } }
+}
+
+vob_step_2_3 = {
+    scope = country
+    ai_is_valid = { always = no }
+    is_shown = { is_player = yes }
+    is_valid = { is_player = yes var:vob_phase = 2 }
+    effect = { if = { limit = { is_player = yes var:vob_phase = 2 }
+set_variable = { name = vob_phase value = 3 }
+    } }
+}
+
+vob_step_3_4 = {
+    scope = country
+    ai_is_valid = { always = no }
+    is_shown = { is_player = yes }
+    is_valid = { is_player = yes var:vob_phase = 3 }
+    effect = { if = { limit = { is_player = yes var:vob_phase = 3 }
+set_variable = { name = vob_phase value = 4 }
+    } }
+}
+
+vob_step_4_5 = {
+    scope = country
+    ai_is_valid = { always = no }
+    is_shown = { is_player = yes }
+    is_valid = { is_player = yes var:vob_phase = 4 }
+    effect = { if = { limit = { is_player = yes var:vob_phase = 4 }
+set_variable = { name = vob_phase value = 5 }
+    } }
+}
+
+vob_step_5_6 = {
+    scope = country
+    ai_is_valid = { always = no }
+    is_shown = { is_player = yes }
+    is_valid = { is_player = yes var:vob_phase = 5 }
+    effect = { if = { limit = { is_player = yes var:vob_phase = 5 }
+set_variable = { name = vob_phase value = 6 }
+    } }
+}
+
+vob_step_6_7 = {
+    scope = country
+    ai_is_valid = { always = no }
+    is_shown = { is_player = yes }
+    is_valid = { is_player = yes var:vob_phase = 6 }
+    effect = { if = { limit = { is_player = yes var:vob_phase = 6 }
+set_variable = { name = vob_phase value = 7 }
+    } }
+}
+
+vob_advance = {
+    scope = country
+    ai_is_valid = { always = no }
+    is_shown = { is_player = yes }
+    is_valid = { is_player = yes var:vob_phase = 8 }
+    effect = { if = { limit = { is_player = yes var:vob_phase = 8 }
+vob_pick_next = yes
+    } }
+}
+
+vob_skip_1 = {
+    scope = country
+    ai_is_valid = { always = no }
+    is_shown = { is_player = yes }
+    is_valid = { is_player = yes OR = { var:vob_phase = 1 } }
+    effect = { if = { limit = { is_player = yes OR = { var:vob_phase = 1 } }
+change_variable = { name = vob_skip_1 add = 1 }
+vob_skip_target = yes
+    } }
+}
+
+vob_skip_2 = {
+    scope = country
+    ai_is_valid = { always = no }
+    is_shown = { is_player = yes }
+    is_valid = { is_player = yes OR = { var:vob_phase = 3 } }
+    effect = { if = { limit = { is_player = yes OR = { var:vob_phase = 3 } }
+change_variable = { name = vob_skip_2 add = 1 }
+vob_skip_target = yes
+    } }
+}
+
+vob_skip_3 = {
+    scope = country
+    ai_is_valid = { always = no }
+    is_shown = { is_player = yes }
+    is_valid = { is_player = yes OR = { var:vob_phase = 4 } }
+    effect = { if = { limit = { is_player = yes OR = { var:vob_phase = 4 } }
+change_variable = { name = vob_skip_3 add = 1 }
+vob_skip_target = yes
+    } }
+}
+
+vob_skip_4 = {
+    scope = country
+    ai_is_valid = { always = no }
+    is_shown = { is_player = yes }
+    is_valid = { is_player = yes OR = { var:vob_phase = 7 } }
+    effect = { if = { limit = { is_player = yes OR = { var:vob_phase = 7 } }
+change_variable = { name = vob_skip_4 add = 1 }
+vob_skip_target = yes
+    } }
+}
+
+vob_skip_5 = {
+    scope = country
+    ai_is_valid = { always = no }
+    is_shown = { is_player = yes }
+    is_valid = { is_player = yes OR = { var:vob_phase = 5 var:vob_phase = 6 var:vob_phase = 7 } }
+    effect = { if = { limit = { is_player = yes OR = { var:vob_phase = 5 var:vob_phase = 6 var:vob_phase = 7 } }
+change_variable = { name = vob_skip_5 add = 1 }
+vob_skip_target = yes
+    } }
+}
+
+vob_preview_done = {
+    scope = country
+    ai_is_valid = { always = no }
+    is_shown = { is_player = yes }
+    is_valid = { is_player = yes var:vob_phase = 7 has_variable = vob_preview }
+    effect = { if = { limit = { is_player = yes var:vob_phase = 7 has_variable = vob_preview }
+set_variable = { name = vob_phase value = 0 }
+set_variable = { name = vob_report value = 4 }
+clear_variable_list = vob_queue
+remove_variable = vob_preview
+    } }
+}
+
+vob_unexpected_draft = {
+    scope = country
+    ai_is_valid = { always = no }
+    is_shown = { is_player = yes }
+    is_valid = { is_player = yes var:vob_phase > 0 }
+    effect = { if = { limit = { is_player = yes var:vob_phase > 0 }
+set_variable = { name = vob_phase value = 0 }
+set_variable = { name = vob_report value = 5 }
+clear_variable_list = vob_queue
+    } }
+}
+
+vob_quantity_failed = {
+    scope = country
+    ai_is_valid = { always = no }
+    is_shown = { is_player = yes }
+    is_valid = { is_player = yes var:vob_phase = 6 }
+    effect = { if = { limit = { is_player = yes var:vob_phase = 6 }
+set_variable = { name = vob_phase value = 0 }
+set_variable = { name = vob_report value = 6 }
+clear_variable_list = vob_queue
+    } }
+}
+
+vob_affordable = {
+    scope = country
+    ai_is_valid = { always = no }
+    is_shown = { is_player = yes }
+    saved_scopes = { cost }
+    is_valid = { is_player = yes 
+var:vob_phase = 7
+exists = scope:cost
+scope:cost >= 0
+ }
+}
+
+vob_record_send = {
+    scope = country
+    ai_is_valid = { always = no }
+    is_shown = { is_player = yes }
+    saved_scopes = { cost }
+    is_valid = { is_player = yes 
+var:vob_phase = 7
+exists = scope:cost
+scope:cost >= 0
+ NOT = { has_variable = vob_preview } }
+    effect = { if = { limit = { is_player = yes 
+var:vob_phase = 7
+exists = scope:cost
+scope:cost >= 0
+ NOT = { has_variable = vob_preview } }
+
+change_variable = { name = vob_sent add = 1 }
+set_variable = { name = vob_phase value = 8 }
+
+    } }
+}
