@@ -130,6 +130,18 @@
 
 用户反馈上述隐藏 setter/编辑框调用无效，且启用 mod 后空格键无法控制时间。现已全部撤回，阶段 5 恢复为只推进到阶段 6，不再从隐藏 widget 调用任何金额写入接口。资金金额仍需手动调整；此修改优先恢复原版时间控制输入。
 
+## 2026-10-13：绕过 setter 的“初始值即最大值”方案
+
+1.13 原版 `common/treaty_articles/05_transfer_money.txt` 明确给出：
+
+- `quantity_min_value` 的默认值为 100，并受 `fixed_income` 上限约束；
+- `quantity_max_value` 为 `fixed_income / 4`，当 `income_transfer_relative_expenses >= 0.5` 时上限为 100；
+- 数量脚本值的 `root` 是资金转让条款的 source country。
+
+因此新增了 mod 文件 `common/treaty_articles/05_transfer_money.txt` 的局部覆盖：当玩家国家存在临时变量 `vob_force_money_max` 时，把 `quantity_min_value` 改成与原版最大值相同的公式（并保留 100 的费用上限）。条款创建时初始数量理论上就会是最大值，不需要调用 `SetQuantity`、编辑框回调或模拟鼠标拖动。批量/预览开始时设置该变量；停止、异常草稿、数量失败以及阶段 6 加入条款后清理该变量。批量模式外不改变原版最小值。
+
+这是有意的取巧方案：在批量模式中滑杆的最小值和最大值会相等，用户不能在该流程中选择较低金额；同时它依赖 1.13 对 treaty article 局部 key 合并和 quantity script value 中 `has_variable` 的正常支持。尚未启动游戏验证，用户下一次测试应重点观察进入资金窗口时 `qty` 是否直接等于 `max`，以及 `debug.log` 是否出现 common treaty article 解析错误。
+
 ## 2026-10-12：`raw_text` 与 `text` 的修正
 
 用户验证发现，将整条 `SelectLocalization(...)` 放入 `raw_text` 后，1.13 仍把表达式当成字面键显示为 `vob_trace_qtymax_yes`，并继续记录 `PdxDataFetchLocalizedData failed`。因此诊断状态控件已改用 `text = "[SelectLocalization(...)]"`；数值汇总行仍使用 `raw_text`。重新加载后应显示本地化结果（例如 `qty=max Y/N`），不应再显示 `vob_trace_*` 键名。

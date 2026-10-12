@@ -492,6 +492,7 @@ vob_start = {
     is_valid = { is_player = yes var:vob_phase = 0 }
     effect = { if = { limit = { is_player = yes var:vob_phase = 0 }
 remove_variable = vob_preview
+set_variable = { name = vob_force_money_max value = 1 }
 set_variable = { name = vob_skip_1 value = 0 }
 set_variable = { name = vob_skip_2 value = 0 }
 set_variable = { name = vob_skip_3 value = 0 }
@@ -509,6 +510,7 @@ vob_preview = {
     is_valid = { is_player = yes var:vob_phase = 0 }
     effect = { if = { limit = { is_player = yes var:vob_phase = 0 }
 set_variable = { name = vob_preview value = 1 }
+set_variable = { name = vob_force_money_max value = 1 }
 set_variable = { name = vob_skip_1 value = 0 }
 set_variable = { name = vob_skip_2 value = 0 }
 set_variable = { name = vob_skip_3 value = 0 }
@@ -526,6 +528,7 @@ vob_stop = {
     is_valid = { is_player = yes  }
     effect = { if = { limit = { is_player = yes  }
 set_variable = { name = vob_phase value = 0 }
+remove_variable = vob_force_money_max
 set_variable = { name = vob_report value = 3 }
 clear_variable_list = vob_queue
 remove_variable = vob_preview
@@ -611,6 +614,7 @@ vob_step_6_7 = {
     effect = { if = { limit = { is_player = yes var:vob_phase = 6 }
 debug_log = "VOBTRACE: phase 6->7; the GUI invoked TreatyDraft.AddArticleDraft immediately before this transition."
 set_variable = { name = vob_phase value = 7 }
+remove_variable = vob_force_money_max
     } }
 }
 
@@ -701,6 +705,7 @@ vob_unexpected_draft = {
     effect = { if = { limit = { is_player = yes var:vob_phase > 0 }
 set_variable = { name = vob_phase value = 0 }
 set_variable = { name = vob_report value = 5 }
+remove_variable = vob_force_money_max
 clear_variable_list = vob_queue
     } }
 }
@@ -714,6 +719,7 @@ vob_quantity_failed = {
 debug_log = "VOBTRACE: quantity-failed branch fired because current ArticleDraft quantity did not equal GetMaxValidQuantity."
 set_variable = { name = vob_phase value = 0 }
 set_variable = { name = vob_report value = 6 }
+remove_variable = vob_force_money_max
 clear_variable_list = vob_queue
     } }
 }
