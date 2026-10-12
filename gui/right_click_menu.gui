@@ -16432,8 +16432,9 @@ on_start = "[InformationPanelBar.ClosePanel]"
         alwaystransparent = yes
         state = {
             name = vob_run
-            trigger_when = "[And(And(And(And(GetVariableSystem.Exists('vob_armed'), And(And(IsInGame, And(GetPlayer.IsValid, And(Not(GetMetaPlayer.IsObserver), And(Not(GameIsMultiplayer), And(Not(IsPauseMenuShown), Not(IsGameOverScreenShown)))))), IsGamePaused)), And(TreatyDraft.IsValidDataContext, And(ObjectsEqual(TreatyDraft.GetLeftCountry.Self, GetPlayer.Self), And(ObjectsEqual(TreatyDraft.GetRightCountry.Self, GetPlayer.MakeScope.Var('vob_target').GetCountry.Self), Not(TreatyDraft.IsRenegotiation))))), And(ArticleDraft.HasType('money_transfer'), And(ObjectsEqual(ArticleDraft.GetFirstOrSource.Self, TreatyDraft.GetRightCountry.Self), ObjectsEqual(ArticleDraft.GetSecondOrTarget.Self, TreatyDraft.GetLeftCountry.Self)))), And(EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_phase').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)6'), TreatyDraft.CanIncludeArticleDraft(ArticleDraft.Self)))]"
-            on_start = "[TreatyDraft.AddArticleDraft(ArticleDraft.Self)]"
+            trigger_when = "[And(And(And(And(And(GetVariableSystem.Exists('vob_armed'), Not(GetVariableSystem.Exists('vob_article_added'))), And(And(IsInGame, And(GetPlayer.IsValid, And(Not(GetMetaPlayer.IsObserver), And(Not(GameIsMultiplayer), And(Not(IsPauseMenuShown), Not(IsGameOverScreenShown)))))), IsGamePaused)), And(TreatyDraft.IsValidDataContext, And(ObjectsEqual(TreatyDraft.GetLeftCountry.Self, GetPlayer.Self), And(ObjectsEqual(TreatyDraft.GetRightCountry.Self, GetPlayer.MakeScope.Var('vob_target').GetCountry.Self), Not(TreatyDraft.IsRenegotiation))))), And(ArticleDraft.HasType('money_transfer'), And(ObjectsEqual(ArticleDraft.GetFirstOrSource.Self, TreatyDraft.GetRightCountry.Self), ObjectsEqual(ArticleDraft.GetSecondOrTarget.Self, TreatyDraft.GetLeftCountry.Self)))), And(EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_phase').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)6'), TreatyDraft.CanIncludeArticleDraft(ArticleDraft.Self)))]"
+            on_start = "[GetVariableSystem.Set('vob_article_added', 'yes')]"
+on_start = "[TreatyDraft.AddArticleDraft(ArticleDraft.Self)]"
 on_start = "[GetScriptedGui('vob_step_6_7').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).End)]"
 on_start = "[RightClickMenuManager.Close]"
         }

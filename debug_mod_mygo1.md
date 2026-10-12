@@ -140,6 +140,8 @@
 
 该方案曾尝试新增 `common/treaty_articles/05_transfer_money.txt` 局部覆盖，并在批量期间设置 `vob_force_money_max`，让条款初始数量等于最大值。用户测试时自动执行立即导致游戏崩溃，因此已完整撤回该文件和变量改动。当前不能假设 1.13 支持对原版 treaty article 做这种局部覆盖；后续不再使用此方案。
 
+随后从用户运行后的 `error.log` 确认了崩溃诱因：该局部定义覆盖了完整的 `money_transfer` 条款，令原版 `required_inputs = { quantity }` 丢失，产生“requires 0 inputs but only 1 were provided”；同时 `vob_force_money_max` 被引用但没有有效设置，触发脚本系统校验错误。已删除该文件，恢复使用游戏 1.13 原版 `money_transfer` 定义。
+
 ## 2026-10-12：`raw_text` 与 `text` 的修正
 
 用户验证发现，将整条 `SelectLocalization(...)` 放入 `raw_text` 后，1.13 仍把表达式当成字面键显示为 `vob_trace_qtymax_yes`，并继续记录 `PdxDataFetchLocalizedData failed`。因此诊断状态控件已改用 `text = "[SelectLocalization(...)]"`；数值汇总行仍使用 `raw_text`。重新加载后应显示本地化结果（例如 `qty=max Y/N`），不应再显示 `vob_trace_*` 键名。
@@ -157,3 +159,13 @@
 `ingame_hud.gui` 与 1.13 原版相比只新增了 `vob_hud = {}`。`vob_hud` 是全屏、常驻的脚本桥接 widget；此前没有声明焦点策略。虽然 `clickthrough_blocker` 只设置鼠标过滤，但全屏自定义 widget 仍可能参与 GUI 焦点路由，导致空格等全局输入动作无法到达 `timemanip`。
 
 已给 `vob_hud` 和 `vob_running_bar` 添加 `focuspolicy = none` 与 `focus_on_visible = no`；控制面板保留默认焦点策略，以免影响其中按钮和编辑框。这不改变脚本状态机，只隔离常驻桥接层的键盘焦点。阶段 5 仍不调用任何未确认的金额 setter；资金金额自动最大化在 1.13 中尚未找到可靠的公开接口。
+
+## 2026-10-13：阶段 6 重复加入条款的崩溃风险
+
+检查用户反馈“点击自动签条约后弹出控制台并崩溃”时，发现阶段 6 的透明 GUI widget 在满足触发条件后会执行 `TreatyDraft.AddArticleDraft(ArticleDraft.Self)`，随后关闭窗口并推进阶段。若 GUI 状态在同一帧或下一帧仍短暂满足条件，可能再次把相同的 `ArticleDraft` 送入条约创建路径；这会把正常条款变成重复/多输入的创建选项，风险高于普通脚本错误。
+
+已加入一次性闸门：阶段 4 打开资金转让输入窗口时清除 `vob_article_added`；阶段 6 只有在该变量不存在时才触发，并在调用 `TreatyDraft.AddArticleDraft` 前立即设置它。这样不会改变原版 `money_transfer` 定义，也不会重复调用条款添加接口。
+
+`error.log` 中的 `money_transfer requires 0 inputs but only 1 were provided` 与 `vob_force_money_max is used but is never set` 属于先前局部覆盖条款及旧进程留下的日志；当前 mod 中已删除 `common/treaty_articles/05_transfer_money.txt`，并删除所有 `vob_force_money_max` 引用。必须完全退出并重新启动游戏后再以新的日志判断是否仍有同样错误。另有 `vob_guis.txt should be in utf8-bom encoding` 警告，它是编码警告，不是条约崩溃的直接证据。
+
+同一批测试生成了 `crashes/victoria3_01260913_012949/exception.txt`：Victoria 3 1.13.9 在 `01:29:49` 发生 `C0000005 (EXCEPTION_ACCESS_VIOLATION)`。该报告没有符号化调用栈，但此前 `game.log` 在 `01:28:59` 和 `01:29:08` 连续记录同一 `create_treaty` 输入数量错误，时间上与崩溃前的重复条约创建相符。新的阶段 6 一次性闸门针对的就是这条风险路径。
