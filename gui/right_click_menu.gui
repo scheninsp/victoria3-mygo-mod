@@ -16396,9 +16396,8 @@ blockoverride "fixed_top" { using = article_input_fixed_top
         state = {
             name = vob_run
             trigger_when = "[And(And(And(And(GetVariableSystem.Exists('vob_armed'), And(And(IsInGame, And(GetPlayer.IsValid, And(Not(GetMetaPlayer.IsObserver), And(Not(GameIsMultiplayer), And(Not(IsPauseMenuShown), Not(IsGameOverScreenShown)))))), IsGamePaused)), And(TreatyDraft.IsValidDataContext, And(ObjectsEqual(TreatyDraft.GetLeftCountry.Self, GetPlayer.Self), And(ObjectsEqual(TreatyDraft.GetRightCountry.Self, GetPlayer.MakeScope.Var('vob_target').GetCountry.Self), Not(TreatyDraft.IsRenegotiation))))), And(ArticleDraft.HasType('money_transfer'), And(ObjectsEqual(ArticleDraft.GetFirstOrSource.Self, TreatyDraft.GetRightCountry.Self), ObjectsEqual(ArticleDraft.GetSecondOrTarget.Self, TreatyDraft.GetLeftCountry.Self)))), And(EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_phase').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)5'), GreaterThanOrEqualTo_int32(ArticleDraft.GetMaxValidQuantity, ArticleDraft.GetMinValidQuantity)))]"
-        on_start = "[GetVariableSystem.Set('vob_quantity_callback', 'called')]"
-on_start = "[GetVariableSystem.Set('vob_attempted_max', ToString_int32(ArticleDraft.GetMaxValidQuantity))]"
-        on_start = "[ArticleDraft.OnQuantityChangedSlider(IntToFixedPoint(ArticleDraft.GetMaxValidQuantity))]"
+        on_start = "[GetVariableSystem.Set('vob_quantity_callback', 'not_available_in_1_13')]"
+        on_start = "[GetVariableSystem.Set('vob_attempted_max', ToString_int32(ArticleDraft.GetMaxValidQuantity))]"
 on_start = "[GetScriptedGui('vob_step_5_6').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).End)]"
         }
     }
@@ -16434,7 +16433,7 @@ on_start = "[InformationPanelBar.ClosePanel]"
         alwaystransparent = yes
         state = {
             name = vob_run
-            trigger_when = "[And(And(And(And(GetVariableSystem.Exists('vob_armed'), And(And(IsInGame, And(GetPlayer.IsValid, And(Not(GetMetaPlayer.IsObserver), And(Not(GameIsMultiplayer), And(Not(IsPauseMenuShown), Not(IsGameOverScreenShown)))))), IsGamePaused)), And(TreatyDraft.IsValidDataContext, And(ObjectsEqual(TreatyDraft.GetLeftCountry.Self, GetPlayer.Self), And(ObjectsEqual(TreatyDraft.GetRightCountry.Self, GetPlayer.MakeScope.Var('vob_target').GetCountry.Self), Not(TreatyDraft.IsRenegotiation))))), And(ArticleDraft.HasType('money_transfer'), And(ObjectsEqual(ArticleDraft.GetFirstOrSource.Self, TreatyDraft.GetRightCountry.Self), ObjectsEqual(ArticleDraft.GetSecondOrTarget.Self, TreatyDraft.GetLeftCountry.Self)))), And(EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_phase').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)6'), And(EqualTo_CFixedPoint(ArticleDraft.GetQuantity, IntToFixedPoint(ArticleDraft.GetMaxValidQuantity)), TreatyDraft.CanIncludeArticleDraft(ArticleDraft.Self))))]"
+            trigger_when = "[And(And(And(And(GetVariableSystem.Exists('vob_armed'), And(And(IsInGame, And(GetPlayer.IsValid, And(Not(GetMetaPlayer.IsObserver), And(Not(GameIsMultiplayer), And(Not(IsPauseMenuShown), Not(IsGameOverScreenShown)))))), IsGamePaused)), And(TreatyDraft.IsValidDataContext, And(ObjectsEqual(TreatyDraft.GetLeftCountry.Self, GetPlayer.Self), And(ObjectsEqual(TreatyDraft.GetRightCountry.Self, GetPlayer.MakeScope.Var('vob_target').GetCountry.Self), Not(TreatyDraft.IsRenegotiation))))), And(ArticleDraft.HasType('money_transfer'), And(ObjectsEqual(ArticleDraft.GetFirstOrSource.Self, TreatyDraft.GetRightCountry.Self), ObjectsEqual(ArticleDraft.GetSecondOrTarget.Self, TreatyDraft.GetLeftCountry.Self)))), And(EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_phase').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)6'), TreatyDraft.CanIncludeArticleDraft(ArticleDraft.Self)))]"
             on_start = "[TreatyDraft.AddArticleDraft(ArticleDraft.Self)]"
 on_start = "[GetScriptedGui('vob_step_6_7').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).End)]"
 on_start = "[RightClickMenuManager.Close]"
@@ -16447,7 +16446,7 @@ on_start = "[RightClickMenuManager.Close]"
         alwaystransparent = yes
         state = {
             name = vob_run
-            trigger_when = "[And(And(And(And(GetVariableSystem.Exists('vob_armed'), And(And(IsInGame, And(GetPlayer.IsValid, And(Not(GetMetaPlayer.IsObserver), And(Not(GameIsMultiplayer), And(Not(IsPauseMenuShown), Not(IsGameOverScreenShown)))))), IsGamePaused)), And(TreatyDraft.IsValidDataContext, And(ObjectsEqual(TreatyDraft.GetLeftCountry.Self, GetPlayer.Self), And(ObjectsEqual(TreatyDraft.GetRightCountry.Self, GetPlayer.MakeScope.Var('vob_target').GetCountry.Self), Not(TreatyDraft.IsRenegotiation))))), And(ArticleDraft.HasType('money_transfer'), And(ObjectsEqual(ArticleDraft.GetFirstOrSource.Self, TreatyDraft.GetRightCountry.Self), ObjectsEqual(ArticleDraft.GetSecondOrTarget.Self, TreatyDraft.GetLeftCountry.Self)))), And(EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_phase').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)6'), And(EqualTo_CFixedPoint(ArticleDraft.GetQuantity, IntToFixedPoint(ArticleDraft.GetMaxValidQuantity)), Not(TreatyDraft.CanIncludeArticleDraft(ArticleDraft.Self)))))]"
+            trigger_when = "[And(And(And(And(GetVariableSystem.Exists('vob_armed'), And(And(IsInGame, And(GetPlayer.IsValid, And(Not(GetMetaPlayer.IsObserver), And(Not(GameIsMultiplayer), And(Not(IsPauseMenuShown), Not(IsGameOverScreenShown)))))), IsGamePaused)), And(TreatyDraft.IsValidDataContext, And(ObjectsEqual(TreatyDraft.GetLeftCountry.Self, GetPlayer.Self), And(ObjectsEqual(TreatyDraft.GetRightCountry.Self, GetPlayer.MakeScope.Var('vob_target').GetCountry.Self), Not(TreatyDraft.IsRenegotiation))))), And(ArticleDraft.HasType('money_transfer'), And(ObjectsEqual(ArticleDraft.GetFirstOrSource.Self, TreatyDraft.GetRightCountry.Self), ObjectsEqual(ArticleDraft.GetSecondOrTarget.Self, TreatyDraft.GetLeftCountry.Self)))), And(EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_phase').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)6'), Not(TreatyDraft.CanIncludeArticleDraft(ArticleDraft.Self))))]"
             on_start = "[GetScriptedGui('vob_skip_5').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).End)]"
 on_start = "[RightClickMenuManager.Close]"
 on_start = "[TreatyDraft.ResetAll]"
@@ -16461,7 +16460,7 @@ on_start = "[InformationPanelBar.ClosePanel]"
         visible = "[ArticleDraft.HasType('money_transfer')]"
         parentanchor = bottom|hcenter
         direction = vertical
-        size = { 650 105 }
+        size = { 650 315 }
         spacing = 0
 
         textbox = {
@@ -16474,25 +16473,103 @@ on_start = "[InformationPanelBar.ClosePanel]"
             size = { 650 21 }
             fontsize = 11
             align = left|nobaseline
-            raw_text = "armed [SelectLocalization(GetVariableSystem.Exists('vob_armed'), 'vob_trace_yes', 'vob_trace_no')] | qty=max [SelectLocalization(EqualTo_CFixedPoint(ArticleDraft.GetQuantity, IntToFixedPoint(ArticleDraft.GetMaxValidQuantity)), 'vob_trace_yes', 'vob_trace_no')] | possible [SelectLocalization(ArticleDraft.IsPossible, 'vob_trace_yes', 'vob_trace_no')] | inputs [SelectLocalization(ArticleDraft.HasAllRequiredInputsSet, 'vob_trace_yes', 'vob_trace_no')]"
+            text = "[SelectLocalization(GetVariableSystem.Exists('vob_armed'), 'vob_trace_armed_yes', 'vob_trace_armed_no')]"
         }
         textbox = {
             size = { 650 21 }
             fontsize = 11
             align = left|nobaseline
-            raw_text = "include [SelectLocalization(TreatyDraft.CanIncludeArticleDraft(ArticleDraft.Self), 'vob_trace_yes', 'vob_trace_no')] | callback [SelectLocalization(GetVariableSystem.Exists('vob_quantity_callback'), 'vob_trace_yes', 'vob_trace_no')] | max-same [SelectLocalization(GetVariableSystem.HasValue('vob_attempted_max', ToString_int32(ArticleDraft.GetMaxValidQuantity)), 'vob_trace_yes', 'vob_trace_no')]"
+            text = "[SelectLocalization(IsGamePaused, 'vob_trace_paused_yes', 'vob_trace_paused_no')]"
         }
         textbox = {
             size = { 650 21 }
             fontsize = 11
             align = left|nobaseline
-            raw_text = "context: paused [SelectLocalization(IsGamePaused, 'vob_trace_yes', 'vob_trace_no')] | treaty [SelectLocalization(TreatyDraft.IsValidDataContext, 'vob_trace_yes', 'vob_trace_no')] | left=player [SelectLocalization(ObjectsEqual(TreatyDraft.GetLeftCountry.Self, GetPlayer.Self), 'vob_trace_yes', 'vob_trace_no')] | right=target [SelectLocalization(ObjectsEqual(TreatyDraft.GetRightCountry.Self, GetPlayer.MakeScope.Var('vob_target').GetCountry.Self), 'vob_trace_yes', 'vob_trace_no')]"
+            text = "[SelectLocalization(And(IsInGame, And(GetPlayer.IsValid, And(Not(GetMetaPlayer.IsObserver), And(Not(GameIsMultiplayer), And(Not(IsPauseMenuShown), Not(IsGameOverScreenShown)))))), 'vob_trace_runtime_yes', 'vob_trace_runtime_no')]"
         }
         textbox = {
             size = { 650 21 }
             fontsize = 11
             align = left|nobaseline
-            raw_text = "article: source=right [SelectLocalization(ObjectsEqual(ArticleDraft.GetFirstOrSource.Self, TreatyDraft.GetRightCountry.Self), 'vob_trace_yes', 'vob_trace_no')] | target=left [SelectLocalization(ObjectsEqual(ArticleDraft.GetSecondOrTarget.Self, TreatyDraft.GetLeftCountry.Self), 'vob_trace_yes', 'vob_trace_no')] | non-renegotiation [SelectLocalization(Not(TreatyDraft.IsRenegotiation), 'vob_trace_yes', 'vob_trace_no')]"
+            text = "[SelectLocalization(TreatyDraft.IsValidDataContext, 'vob_trace_treaty_yes', 'vob_trace_treaty_no')]"
+        }
+        textbox = {
+            size = { 650 21 }
+            fontsize = 11
+            align = left|nobaseline
+            text = "[SelectLocalization(ObjectsEqual(TreatyDraft.GetLeftCountry.Self, GetPlayer.Self), 'vob_trace_left_yes', 'vob_trace_left_no')]"
+        }
+        textbox = {
+            size = { 650 21 }
+            fontsize = 11
+            align = left|nobaseline
+            text = "[SelectLocalization(ObjectsEqual(TreatyDraft.GetRightCountry.Self, GetPlayer.MakeScope.Var('vob_target').GetCountry.Self), 'vob_trace_right_yes', 'vob_trace_right_no')]"
+        }
+        textbox = {
+            size = { 650 21 }
+            fontsize = 11
+            align = left|nobaseline
+            text = "[SelectLocalization(Not(TreatyDraft.IsRenegotiation), 'vob_trace_renegotiation_yes', 'vob_trace_renegotiation_no')]"
+        }
+        textbox = {
+            size = { 650 21 }
+            fontsize = 11
+            align = left|nobaseline
+            text = "[SelectLocalization(ArticleDraft.HasType('money_transfer'), 'vob_trace_type_yes', 'vob_trace_type_no')]"
+        }
+        textbox = {
+            size = { 650 21 }
+            fontsize = 11
+            align = left|nobaseline
+            text = "[SelectLocalization(ObjectsEqual(ArticleDraft.GetFirstOrSource.Self, TreatyDraft.GetRightCountry.Self), 'vob_trace_source_yes', 'vob_trace_source_no')]"
+        }
+        textbox = {
+            size = { 650 21 }
+            fontsize = 11
+            align = left|nobaseline
+            text = "[SelectLocalization(ObjectsEqual(ArticleDraft.GetSecondOrTarget.Self, TreatyDraft.GetLeftCountry.Self), 'vob_trace_target_yes', 'vob_trace_target_no')]"
+        }
+        textbox = {
+            size = { 650 21 }
+            fontsize = 11
+            align = left|nobaseline
+            text = "[SelectLocalization(EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_phase').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)6'), 'vob_trace_phase6_yes', 'vob_trace_phase6_no')]"
+        }
+        textbox = {
+            size = { 650 21 }
+            fontsize = 11
+            align = left|nobaseline
+            text = "[SelectLocalization(EqualTo_CFixedPoint(ArticleDraft.GetQuantity, IntToFixedPoint(ArticleDraft.GetMaxValidQuantity)), 'vob_trace_qtymax_yes', 'vob_trace_qtymax_no')]"
+        }
+        textbox = {
+            size = { 650 21 }
+            fontsize = 11
+            align = left|nobaseline
+            text = "[SelectLocalization(TreatyDraft.CanIncludeArticleDraft(ArticleDraft.Self), 'vob_trace_include_yes', 'vob_trace_include_no')]"
+        }
+        textbox = {
+            size = { 650 21 }
+            fontsize = 11
+            align = left|nobaseline
+            text = "[SelectLocalization(GreaterThanOrEqualTo_int32(ArticleDraft.GetMaxValidQuantity, ArticleDraft.GetMinValidQuantity), 'vob_trace_range_yes', 'vob_trace_range_no')]"
+        }
+        textbox = {
+            size = { 650 21 }
+            fontsize = 11
+            align = left|nobaseline
+            text = "[SelectLocalization(GetVariableSystem.Exists('vob_quantity_callback'), 'vob_trace_callback_yes', 'vob_trace_callback_no')]"
+        }
+        textbox = {
+            size = { 650 21 }
+            fontsize = 11
+            align = left|nobaseline
+            text = "[SelectLocalization(ArticleDraft.IsPossible, 'vob_trace_possible_yes', 'vob_trace_possible_no')]"
+        }
+        textbox = {
+            size = { 650 21 }
+            fontsize = 11
+            align = left|nobaseline
+            text = "[SelectLocalization(ArticleDraft.HasAllRequiredInputsSet, 'vob_trace_inputs_yes', 'vob_trace_inputs_no')]"
         }
     }
 }

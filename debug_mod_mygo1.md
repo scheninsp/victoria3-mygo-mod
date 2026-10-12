@@ -71,3 +71,55 @@
 用户最新启动产生的 `logs/debug.log` 显示同一次运行同时挂载了本地 `C:\Users\infin\Documents\Paradox Interactive\Victoria 3\mod\mygo`（支持版本 `1.13.*`）和 Steam Workshop `D:\SteamLibrary\steamapps\workshop\content\529340\3806246202`（支持版本 `1.14.*`）。两份 mod 的名称和 ID 相同，且都定义 VOB GUI；并行启用会使文件覆盖/类型定义来源不明确。验证本地改动时应在启动器只启用本地 `mygo`，停用 Workshop 重复项。该结论来自日志中的两条 `Mounted Data` 和两条版本匹配记录；没有启动或操作游戏。
 
 当前补丁只做了文本/结构验证，未启动游戏。下一次由用户测试时，记录面板五行（尤其 `armed`、`qty=max`、`possible`、`inputs`、`include`）并确认滑杆拖到上限后是否自动添加并进入阶段 7。
+
+## 2026-10-12：停用重复 Workshop mod
+
+发现 active playset `myLauncher` 同时挂载本地 `mygo` 和 Steam Workshop `3806246202`。配置位于：
+
+`C:\Users\infin\Documents\Paradox Interactive\Victoria 3\launcher-v2.sqlite`
+
+两条记录分别是：
+
+- 本地 `mygo`：`source=local`，支持版本 `1.13.*`，`enabled=1`，位置 0。
+- Workshop `3806246202`：`source=steam`，路径 `D:\SteamLibrary\steamapps\workshop\content\529340\3806246202`，支持版本 `1.14.*`，位置 1。
+
+已将 `playsets_mods.enabled` 对应 Workshop 条目改为 `0`，没有删除 `mods` 表记录，也没有删除 Steam Workshop 文件。数据库备份为：
+
+`C:\Users\infin\Documents\Paradox Interactive\Victoria 3\launcher-v2.sqlite.backup_20261012_232429`
+
+修改后查询确认：本地 `mygo` 为启用，Workshop `3806246202` 为停用。重新启动 Launcher/游戏后应只挂载本地 mod；若需恢复，将该条目的 `enabled` 改回 `1`，或在 Launcher 的 playset 中重新启用。
+
+## 2026-10-12：修复诊断文本并拆分阶段 6 条件
+
+`debug.log` 中的 `PdxDataFetchLocalizedData failed` 来自 `right_click_menu.gui` 的诊断行：一条 `raw_text` 同时包含普通文字和多个 `[SelectLocalization(...)]`。1.13 将整行当成一个本地化数据键，因而把表达式字符串继续送入本地化查询并报错；这不是阶段 6 条件本身的结果。
+
+## 2026-10-13：确认 1.13 金额接口与阶段 6 修正
+
+本机 1.13 原版 `game/gui/right_click_menu.gui` 的 `article_input_select_money` 只有以下金额变更路径：
+
+- 滑杆 `value` 读取 `ArticleDraft.GetQuantity`，用户改变滑杆时触发无显式参数的 `ArticleDraft.OnQuantityChangedSlider`。
+- 编辑框使用 `ArticleDraft.OnInputTextChanged`，编辑结束时调用 `ArticleDraft.OnQuantityChanged`。
+
+原版 GUI 没有 `ArticleDraft.SetQuantity`，也没有 `ArticleDraft.OnQuantityChangedSlider(value)` 的调用示例。因此 mod 之前的：
+
+`ArticleDraft.OnQuantityChangedSlider(IntToFixedPoint(ArticleDraft.GetMaxValidQuantity))`
+
+不能证明或实现数量写入；实际运行中的 `qty=100 max=144` 证实它没有改变 ArticleDraft。`OnQuantityChangedSlider` 是控件事件回调，不是已确认可用的带参数 setter。
+
+已移除这次无效的自动设值调用，并取消阶段 6 的 `qty=max` 前置条件。阶段 6 现在只要求原版 `TreatyDraft.CanIncludeArticleDraft(ArticleDraft.Self)` 为真，然后调用原版 `TreatyDraft.AddArticleDraft(ArticleDraft.Self)`。因此当前合法的 100 金额应能继续批量流程；金额最大化仍需通过真实的滑杆/编辑框 UI 事件实现，不能依赖未确认的脚本接口。
+
+已将诊断面板改为每个状态一个 `raw_text` 表达式，并在英文本地化和简体中文本地化中分别提供 Y/N 文本。面板现在逐项显示：`armed`、暂停、运行环境、条约上下文、左方玩家、右方目标、非重谈、资金转让类型、来源、目标、阶段 6、数量是否为最大值、能否加入、最大值是否不小于最小值、数量回调、条款可行性和必需输入是否齐全。
+
+用户重新启动并进入资金转让窗口后，应先确认日志不再刷上述本地化错误，再根据面板中第一个为 N 的状态定位阶段 6 的阻断条件。当前未启动游戏，修改仍需用户在游戏内验证。
+
+## 2026-10-12：`raw_text` 与 `text` 的修正
+
+用户验证发现，将整条 `SelectLocalization(...)` 放入 `raw_text` 后，1.13 仍把表达式当成字面键显示为 `vob_trace_qtymax_yes`，并继续记录 `PdxDataFetchLocalizedData failed`。因此诊断状态控件已改用 `text = "[SelectLocalization(...)]"`；数值汇总行仍使用 `raw_text`。重新加载后应显示本地化结果（例如 `qty=max Y/N`），不应再显示 `vob_trace_*` 键名。
+
+## 备用资料：Ghidra 项目
+
+之前的 `victoria3.exe` Ghidra 逆向项目位于：
+
+`D:\cebuild\vic3-rev\`
+
+仅在本地 GUI、脚本接口、日志和其他直接资料不足以判断问题时考虑使用；当前阶段不需要逆向。
