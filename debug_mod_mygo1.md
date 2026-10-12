@@ -112,6 +112,24 @@
 
 用户重新启动并进入资金转让窗口后，应先确认日志不再刷上述本地化错误，再根据面板中第一个为 N 的状态定位阶段 6 的阻断条件。当前未启动游戏，修改仍需用户在游戏内验证。
 
+## 2026-10-13：恢复 1.13 的最大金额写入尝试
+
+进一步检查 1.13 `victoria3.exe` 的公开 GUI 方法字符串，确认存在 `SetQuantity`、`GetQuantity`、`GetMaxValidQuantity`、`OnQuantityChanged`、`OnQuantityChangedSlider` 和 `OnInputTextChanged`。这只能证明方法被 GUI 数据模型导出，不能单独证明每个参数签名；原版 GUI 仍只展示滑杆事件的无参数绑定。
+
+由于当前流程已能在初始金额 100 下完成，阶段 5 的隐藏状态现恢复为：
+
+`ArticleDraft.SetQuantity(IntToFixedPoint(ArticleDraft.GetMaxValidQuantity))`
+
+随后才进入阶段 6。`OnQuantityChangedSlider` 不再被当作带参数 setter 调用。诊断变量 `vob_quantity_setter` 会记录 `SetQuantity_called`，而阶段转换日志也改为记录 `SetQuantity(max)`。用户验证时应比较资金窗口中的 `qty` 是否从初始值变为 `max`；若仍为初始值，则说明该公开方法在 1.13 的 GUI 表达式中存在但参数签名或运行上下文不接受此调用，下一步需改用真实 editbox/scrollbar 控件事件。
+
+用户验证显示 `SetQuantity(max)` 的 on_start 已执行，但金额仍为 100；同时 `EqualTo_CFixedPoint(... IntToFixedPoint(...))` 放在 `SelectLocalization` 中会触发 1.13 本地化求值错误。已删除该动态 qty=max 行，保留顶部原始 qty/max 数值诊断，并在 setter 后补调用无参数的 `ArticleDraft.OnQuantityChanged`，用于提交可能存在的输入缓存。
+
+本轮又加入了原版编辑框使用的输入路径：`ArticleDraft.OnInputTextChanged(ToString_int32(ArticleDraft.GetMaxValidQuantity))`，随后调用 `ArticleDraft.OnQuantityChanged`。这模拟编辑框先写入文本、再结束编辑的顺序；若 1.13 接受该参数类型，金额应在阶段 6 前变为上限。
+
+为覆盖 `SetQuantity` 可能使用整数而非 `CFixedPoint` 的签名，阶段 5 现在依次尝试 `SetQuantity(IntToFixedPoint(max))` 和 `SetQuantity(max)`，再执行编辑框提交路径。该双调用仅用于确认 1.13 的实际参数类型；确认有效后应删掉无效的那一个。
+
+用户反馈上述隐藏 setter/编辑框调用无效，且启用 mod 后空格键无法控制时间。现已全部撤回，阶段 5 恢复为只推进到阶段 6，不再从隐藏 widget 调用任何金额写入接口。资金金额仍需手动调整；此修改优先恢复原版时间控制输入。
+
 ## 2026-10-12：`raw_text` 与 `text` 的修正
 
 用户验证发现，将整条 `SelectLocalization(...)` 放入 `raw_text` 后，1.13 仍把表达式当成字面键显示为 `vob_trace_qtymax_yes`，并继续记录 `PdxDataFetchLocalizedData failed`。因此诊断状态控件已改用 `text = "[SelectLocalization(...)]"`；数值汇总行仍使用 `raw_text`。重新加载后应显示本地化结果（例如 `qty=max Y/N`），不应再显示 `vob_trace_*` 键名。
@@ -123,3 +141,9 @@
 `D:\cebuild\vic3-rev\`
 
 仅在本地 GUI、脚本接口、日志和其他直接资料不足以判断问题时考虑使用；当前阶段不需要逆向。
+
+## 2026-10-13：空格暂停键回归排查
+
+`ingame_hud.gui` 与 1.13 原版相比只新增了 `vob_hud = {}`。`vob_hud` 是全屏、常驻的脚本桥接 widget；此前没有声明焦点策略。虽然 `clickthrough_blocker` 只设置鼠标过滤，但全屏自定义 widget 仍可能参与 GUI 焦点路由，导致空格等全局输入动作无法到达 `timemanip`。
+
+已给 `vob_hud` 和 `vob_running_bar` 添加 `focuspolicy = none` 与 `focus_on_visible = no`；控制面板保留默认焦点策略，以免影响其中按钮和编辑框。这不改变脚本状态机，只隔离常驻桥接层的键盘焦点。阶段 5 仍不调用任何未确认的金额 setter；资金金额自动最大化在 1.13 中尚未找到可靠的公开接口。

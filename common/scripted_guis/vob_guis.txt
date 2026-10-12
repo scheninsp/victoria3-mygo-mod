@@ -598,7 +598,7 @@ vob_step_5_6 = {
     is_shown = { is_player = yes }
     is_valid = { is_player = yes var:vob_phase = 5 }
     effect = { if = { limit = { is_player = yes var:vob_phase = 5 }
-debug_log = "VOBTRACE: phase 5->6; the GUI called ArticleDraft.OnQuantityChangedSlider(max) immediately before this transition."
+debug_log = "VOBTRACE: phase 5->6; the GUI called ArticleDraft.SetQuantity(max) immediately before this transition."
 set_variable = { name = vob_phase value = 6 }
     } }
 }
