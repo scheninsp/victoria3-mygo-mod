@@ -1,4 +1,4 @@
-﻿vob_consume_ui_request = {
+vob_consume_ui_request = {
     scope = country
     ai_is_valid = { always = no }
     is_shown = { is_player = yes }
@@ -578,16 +578,27 @@ vob_step_4_5 = {
     is_shown = { is_player = yes }
     is_valid = { is_player = yes var:vob_phase = 4 }
     effect = { if = { limit = { is_player = yes var:vob_phase = 4 }
+debug_log = "VOBTRACE: phase 4->5; requesting the money-transfer input window."
 set_variable = { name = vob_phase value = 5 }
     } }
 }
 
+vob_trace_phase6 = {
+    scope = country
+    ai_is_valid = { always = no }
+    is_shown = { is_player = yes }
+    is_valid = { is_player = yes var:vob_phase = 6 }
+    effect = { if = { limit = { is_player = yes var:vob_phase = 6 }
+debug_log = "VOBTRACE: phase 6 input window active; waiting for the automatic add/skip gate."
+    } }
+}
 vob_step_5_6 = {
     scope = country
     ai_is_valid = { always = no }
     is_shown = { is_player = yes }
     is_valid = { is_player = yes var:vob_phase = 5 }
     effect = { if = { limit = { is_player = yes var:vob_phase = 5 }
+debug_log = "VOBTRACE: phase 5->6; the GUI called ArticleDraft.OnQuantityChangedSlider(max) immediately before this transition."
 set_variable = { name = vob_phase value = 6 }
     } }
 }
@@ -598,6 +609,7 @@ vob_step_6_7 = {
     is_shown = { is_player = yes }
     is_valid = { is_player = yes var:vob_phase = 6 }
     effect = { if = { limit = { is_player = yes var:vob_phase = 6 }
+debug_log = "VOBTRACE: phase 6->7; the GUI invoked TreatyDraft.AddArticleDraft immediately before this transition."
 set_variable = { name = vob_phase value = 7 }
     } }
 }
@@ -662,6 +674,7 @@ vob_skip_5 = {
     is_shown = { is_player = yes }
     is_valid = { is_player = yes OR = { var:vob_phase = 5 var:vob_phase = 6 var:vob_phase = 7 } }
     effect = { if = { limit = { is_player = yes OR = { var:vob_phase = 5 var:vob_phase = 6 var:vob_phase = 7 } }
+debug_log = "VOBTRACE: vob_skip_5 branch fired; the current target will be skipped."
 change_variable = { name = vob_skip_5 add = 1 }
 vob_skip_target = yes
     } }
@@ -698,6 +711,7 @@ vob_quantity_failed = {
     is_shown = { is_player = yes }
     is_valid = { is_player = yes var:vob_phase = 6 }
     effect = { if = { limit = { is_player = yes var:vob_phase = 6 }
+debug_log = "VOBTRACE: quantity-failed branch fired because current ArticleDraft quantity did not equal GetMaxValidQuantity."
 set_variable = { name = vob_phase value = 0 }
 set_variable = { name = vob_report value = 6 }
 clear_variable_list = vob_queue

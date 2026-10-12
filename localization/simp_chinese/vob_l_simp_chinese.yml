@@ -1,5 +1,7 @@
-﻿l_simp_chinese:
+l_simp_chinese:
  vob_title:0 "义务批量交易 · 1.0"
+ vob_trace_yes:0 "是"
+ vob_trace_no:0 "否"
  vob_open_tool_decision:0 "打开义务批量交易（1.0）"
  vob_ui_language_token:0 "zh"
  vob_open_tool_decision_desc:0 "打开交易设置、国家排除名单和约束期选项。此决议只打开面板，不会发送提案。"

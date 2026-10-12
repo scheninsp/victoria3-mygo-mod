@@ -1,5 +1,7 @@
-﻿l_english:
+l_english:
  vob_title:0 "Obligation Batch · 1.0"
+ vob_trace_yes:0 "Y"
+ vob_trace_no:0 "N"
  vob_open_tool_decision:0 "Open Obligation Batch (1.0)"
  vob_ui_language_token:0 "en"
  vob_open_tool_decision_desc:0 "Open trade settings, country exclusions and binding-period options. This decision opens the panel without sending proposals."

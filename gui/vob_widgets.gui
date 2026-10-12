@@ -1,4 +1,4 @@
-﻿template vob_button_neutral {
+template vob_button_neutral {
         block "sound" { using = ui_checkbox }
         texture = "gfx/interface/vob/neutral.dds" effectname = "NoHighlight"
         spriteType = Corneredstretched spriteborder = { 5 5 } framesize = { 19 19 }
@@ -2167,6 +2167,8 @@ on_start = "[InformationPanelBar.ClosePanel]"
             name = vob_run
             trigger_when = "[And(And(And(GetVariableSystem.Exists('vob_armed'), And(And(IsInGame, And(GetPlayer.IsValid, And(Not(GetMetaPlayer.IsObserver), And(Not(GameIsMultiplayer), And(Not(IsPauseMenuShown), Not(IsGameOverScreenShown)))))), IsGamePaused)), And(TreatyDraft.IsValidDataContext, And(ObjectsEqual(TreatyDraft.GetLeftCountry.Self, GetPlayer.Self), And(ObjectsEqual(TreatyDraft.GetRightCountry.Self, GetPlayer.MakeScope.Var('vob_target').GetCountry.Self), Not(TreatyDraft.IsRenegotiation))))), And(EqualTo_CFixedPoint(GetPlayer.MakeScope.Var('vob_phase').GetValueWithDefault('(CFixedPoint)0'), '(CFixedPoint)4'), And(GetArticleType('money_transfer').IsVisible(TreatyDraft.GetRightCountry.Self, TreatyDraft.GetLeftCountry.Self), GetArticleType('money_transfer').IsAvailable(TreatyDraft.GetRightCountry.Self, TreatyDraft.GetLeftCountry.Self))))]"
             on_start = "[GetScriptedGui('vob_step_4_5').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).End)]"
+on_start = "[GetVariableSystem.Clear('vob_quantity_callback')]"
+on_start = "[GetVariableSystem.Clear('vob_attempted_max')]"
 on_start = "[RightClickMenuManager.ToggleArticleTypeInput(TreatyDraft.Self, GetArticleType('money_transfer').Self, TreatyDraft.GetRightCountry.Self, PdxGuiWidget.AccessSelf, 'vob_money_input')]"
         }
     }
